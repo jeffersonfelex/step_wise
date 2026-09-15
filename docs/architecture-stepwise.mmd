@@ -1,0 +1,252 @@
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "curve": "basis",
+    "nodeSpacing": 42,
+    "rankSpacing": 62,
+    "htmlLabels": true,
+    "useMaxWidth": true
+  },
+  "themeVariables": {
+    "fontFamily": "Arial, Helvetica, sans-serif",
+    "fontSize": "16px",
+    "background": "#F8FAFC",
+    "mainBkg": "#FFFFFF",
+    "lineColor": "#64748B",
+    "textColor": "#111827",
+    "primaryTextColor": "#111827",
+    "secondaryTextColor": "#374151",
+    "clusterBkg": "#FFFFFF",
+    "clusterBorder": "#CBD5E1",
+    "edgeLabelBackground": "#FFFFFF"
+  }
+}}%%
+
+flowchart LR
+
+%% =========================================================
+%% USUÁRIO
+%% =========================================================
+
+U["<b>Aprendiz</b>"]
+
+
+%% =========================================================
+%% RAY-BAN META GEN 2
+%% =========================================================
+
+subgraph GLASSES["Ray-Ban Meta Gen 2"]
+  direction LR
+
+  MIC["<b>Microfones</b><br/>comandos de voz"]
+  CAM["<b>[ENTRADA]</b><br/>Câmera egocêntrica"]
+  SPK["<b>Alto-falantes</b><br/>open-ear"]
+
+  MIC ~~~ CAM
+  CAM ~~~ SPK
+end
+
+
+%% =========================================================
+%% SMARTPHONE ANDROID / CORE LOCAL
+%% =========================================================
+
+subgraph ANDROID["Smartphone Android / Kotlin · core local · sem cloud no caminho crítico"]
+  direction LR
+
+  %% -----------------------------------------------------
+  %% ENTRADA E ORQUESTRAÇÃO
+  %% -----------------------------------------------------
+  subgraph INPUT["Entrada e orquestração"]
+    direction TB
+
+    VOICE["<b>Entrada de voz</b><br/>Bluetooth HFP<br/>Android SpeechRecognizer"]
+    UI["<b>Companion UI</b><br/>selecionar tarefa<br/>Verificar — fallback"]
+    CTRL["<b>Controlador de sessão</b><br/>Android / Kotlin<br/>comandos + lifecycle"]
+
+    VOICE -->|"VERIFY · HELP · REPEAT"| CTRL
+    UI -->|"procedure_id / fallback"| CTRL
+  end
+
+  %% -----------------------------------------------------
+  %% PIPELINE PRINCIPAL
+  %% -----------------------------------------------------
+  subgraph PIPE["Pipeline principal"]
+    direction LR
+
+    DAT["<b>Meta DAT v0.9</b><br/>DeviceSession<br/>capturePhoto()"]
+    QG["<b>Quality Gate</b><br/>qualidade da imagem<br/>frame utilizável?"]
+    AI["<b>[IA] Detector visual local</b><br/>MediaPipe / LiteRT<br/>classes · bboxes · scores"]
+    ENG["<b>Motor procedural</b><br/>estado + regras + fading L4→L1<br/>CORRECT · KNOWN_ERROR · INCONCLUSIVE<br/><small>INCONCLUSIVE: sem avanço / sem alterar nível</small>"]
+    TTS["<b>[ÁUDIO] Android TextToSpeech</b><br/>instruções e feedback<br/>curtos"]
+
+    DAT -->|"frame"| QG
+    QG -->|"utilizável"| AI
+    AI -->|"classes · bboxes · scores"| ENG
+    ENG -->|"feedback / instrução"| TTS
+  end
+
+  %% -----------------------------------------------------
+  %% RESILIÊNCIA
+  %% -----------------------------------------------------
+  REC["<b>Resiliência</b><br/>LinkState + erros tipados<br/>reconexão + restauração<br/><small>revalidar antes do avanço</small>"]
+
+  %% -----------------------------------------------------
+  %% ORQUESTRAÇÃO → PIPELINE
+  %% -----------------------------------------------------
+  CTRL -->|"VERIFY"| DAT
+  CTRL -->|"HELP / REPEAT"| ENG
+
+  %% -----------------------------------------------------
+  %% ERROS DE SESSÃO / RECONEXÃO
+  %% -----------------------------------------------------
+  DAT -->|"LinkState / erro"| REC
+  REC -->|"reconectar"| CTRL
+end
+
+
+%% =========================================================
+%% CONFIGURAÇÃO E ESTADO LOCAL
+%% =========================================================
+
+subgraph LOCAL["Configuração e estado local"]
+  direction LR
+
+  PROC["<b>Procedimento local</b><br/>Montagem de Engrenagens<br/>etapas · estado esperado<br/>erros · mensagens"]
+  DB["<b>Room — estado e eventos</b><br/>step_id · nível<br/>último checkpoint<br/>resultado · ajuda"]
+
+  PROC ~~~ DB
+end
+
+
+%% =========================================================
+%% POLÍTICAS TRANSVERSAIS
+%% =========================================================
+
+subgraph POLICIES["Políticas transversais"]
+  direction LR
+
+  PRIV["<b>[PRIVACIDADE]</b><br/>frame e áudio efêmeros<br/>descarte pós-uso<br/>eventos mínimos + exclusão local<br/>sem mídia bruta na nuvem"]
+  BAT["<b>[BATERIA]</b><br/>stream 7 fps só na janela<br/>1 capturePhoto()/tentativa<br/>camera.stop() imediato<br/>HFP/ASR em janelas"]
+
+  PRIV ~~~ BAT
+end
+
+
+%% =========================================================
+%% INTERAÇÃO DO APRENDIZ
+%% =========================================================
+
+U -->|"verificar · ajuda · repetir"| MIC
+MIC -->|"áudio via HFP"| VOICE
+
+
+%% =========================================================
+%% CONTROLE DA CÂMERA + RETORNO DO FRAME
+%% =========================================================
+
+DAT -->|"start · capture · stop"| CAM
+CAM -->|"1 frame"| DAT
+
+
+%% =========================================================
+%% QUALITY GATE / EXCEÇÃO
+%% =========================================================
+
+QG -->|"imagem inadequada"| ENG
+
+
+%% =========================================================
+%% CONTEXTO DO PROCEDIMENTO
+%% =========================================================
+
+CTRL -->|"carregar procedure_id"| PROC
+PROC -->|"estado esperado · erros · mensagens"| ENG
+
+
+%% =========================================================
+%% ESTADO PERSISTENTE
+%% =========================================================
+
+DB -->|"step_id · nível · histórico"| ENG
+ENG -->|"resultado · assistência · checkpoint"| DB
+
+
+%% =========================================================
+%% RECONEXÃO E RESTAURAÇÃO
+%% =========================================================
+
+DB -->|"último checkpoint"| REC
+REC -->|"restaurar + revalidar"| ENG
+
+
+%% =========================================================
+%% OUTPUT POR ÁUDIO
+%% =========================================================
+
+TTS -->|"áudio via Bluetooth"| SPK
+SPK -->|"feedback open-ear"| U
+
+
+%% =========================================================
+%% POLÍTICAS DE PRIVACIDADE
+%% =========================================================
+
+PRIV -.-> DAT
+PRIV -.-> VOICE
+PRIV -.-> DB
+
+
+%% =========================================================
+%% POLÍTICAS DE BATERIA
+%% =========================================================
+
+BAT -.-> DAT
+BAT -.-> VOICE
+
+
+%% =========================================================
+%% CLASSES VISUAIS
+%% =========================================================
+
+classDef user fill:#FFFFFF,stroke:#475569,stroke-width:2px,color:#111827;
+classDef hardware fill:#EAF2FF,stroke:#3B82F6,stroke-width:2px,color:#111827;
+classDef core fill:#ECFDF5,stroke:#10B981,stroke-width:2.2px,color:#111827;
+classDef checkpoint fill:#F5F3FF,stroke:#8B5CF6,stroke-width:2.8px,color:#111827;
+classDef support fill:#F8FAFC,stroke:#64748B,stroke-width:1.6px,color:#111827;
+classDef state fill:#FFFBEB,stroke:#F59E0B,stroke-width:2px,color:#111827;
+classDef policy fill:#FAF5FF,stroke:#A855F7,stroke-width:2.2px,color:#111827;
+classDef cameraCheckpoint fill:#EAF2FF,stroke:#8B5CF6,stroke-width:3px,color:#111827;
+
+
+%% =========================================================
+%% APLICAÇÃO DAS CLASSES
+%% =========================================================
+
+class U user;
+class MIC,SPK hardware;
+class CAM cameraCheckpoint;
+class CTRL,DAT,QG,ENG core;
+class AI,TTS checkpoint;
+class VOICE,UI,REC support;
+class PROC,DB state;
+class PRIV,BAT policy;
+
+
+%% =========================================================
+%% ESTILOS DOS AGRUPAMENTOS
+%% =========================================================
+
+style GLASSES fill:#F8FBFF,stroke:#BFDBFE,stroke-width:1.3px,color:#1E3A8A
+style ANDROID fill:#FFFFFF,stroke:#94A3B8,stroke-width:1.6px,color:#334155
+style INPUT fill:#F8FAFC,stroke:#E2E8F0,stroke-width:1px,color:#475569
+style PIPE fill:#FCFFFD,stroke:#BBF7D0,stroke-width:1.2px,color:#065F46
+style LOCAL fill:#FFFDF7,stroke:#FCD34D,stroke-width:1.3px,color:#92400E
+style POLICIES fill:#FCFAFF,stroke:#DDD6FE,stroke-width:1.3px,color:#6B21A8
+
+
+%% =========================================================
+%% ESTILO DAS SETAS
+%% =========================================================
+
+linkStyle default stroke:#64748B,stroke-width:1.6px;

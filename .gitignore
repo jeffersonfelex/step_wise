@@ -1,0 +1,32 @@
+# Ambiente
+.env
+*.env.local
+
+# Android / Gradle
+android/local.properties
+android/.gradle/
+android/**/build/
+android/*.iml
+android/.idea/
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Python (ml/)
+ml/__pycache__/
+ml/**/__pycache__/
+ml/.venv/
+ml/venv/
+ml/*.egg-info/
+ml/models/
+ml/data/*
+!ml/data/.gitkeep
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

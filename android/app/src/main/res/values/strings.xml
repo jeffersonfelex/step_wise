@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">StepWise</string>
+    <string name="select_procedure">Selecionar procedimento</string>
+    <string name="verify_fallback">Verificar</string>
+</resources>

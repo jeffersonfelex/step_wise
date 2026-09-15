@@ -1,0 +1,92 @@
+{
+  "procedure_id": "montagem_engrenagens",
+  "title": "Montagem de Engrenagens",
+  "assistance_levels": ["L4", "L3", "L2", "L1"],
+  "steps": [
+    {
+      "step_id": 1,
+      "name": "Posicionar eixo principal",
+      "expected_classes": ["eixo_principal"],
+      "instructions": {
+        "L4": "Pegue o eixo principal e encaixe-o na base, alinhado ao furo central.",
+        "L3": "Encaixe o eixo principal na base.",
+        "L2": "Posicione o eixo.",
+        "L1": "Eixo."
+      },
+      "known_errors": [
+        { "error_id": "eixo_invertido", "message": "O eixo parece invertido. Gire 180 graus e encaixe novamente." }
+      ]
+    },
+    {
+      "step_id": 2,
+      "name": "Instalar engrenagem azul",
+      "expected_classes": ["engrenagem_azul"],
+      "instructions": {
+        "L4": "Instale a engrenagem azul sobre o eixo principal, com os dentes voltados para fora.",
+        "L3": "Instale a engrenagem azul no eixo.",
+        "L2": "Engrenagem azul no eixo.",
+        "L1": "Azul."
+      },
+      "known_errors": [
+        { "error_id": "engrenagem_errada", "message": "Essa não é a engrenagem azul. Verifique a cor antes de encaixar." }
+      ]
+    },
+    {
+      "step_id": 3,
+      "name": "Instalar engrenagem vermelha",
+      "expected_classes": ["engrenagem_vermelha"],
+      "instructions": {
+        "L4": "Instale a engrenagem vermelha no eixo secundário, engrenando com a azul.",
+        "L3": "Instale a engrenagem vermelha, engrenando com a azul.",
+        "L2": "Engrenagem vermelha, engrenando.",
+        "L1": "Vermelha."
+      },
+      "known_errors": [
+        { "error_id": "engrenagens_nao_engrenadas", "message": "As engrenagens não estão engrenando corretamente. Ajuste a distância entre os eixos." }
+      ]
+    },
+    {
+      "step_id": 4,
+      "name": "Fixar trava do eixo secundário",
+      "expected_classes": ["trava_eixo"],
+      "instructions": {
+        "L4": "Encaixe a trava no eixo secundário para impedir que a engrenagem vermelha se solte.",
+        "L3": "Encaixe a trava no eixo secundário.",
+        "L2": "Trave o eixo secundário.",
+        "L1": "Trava."
+      },
+      "known_errors": []
+    },
+    {
+      "step_id": 5,
+      "name": "Instalar carcaça de proteção",
+      "expected_classes": ["carcaca"],
+      "instructions": {
+        "L4": "Posicione a carcaça de proteção sobre o conjunto de engrenagens e encaixe nos quatro pinos.",
+        "L3": "Encaixe a carcaça sobre as engrenagens.",
+        "L2": "Carcaça sobre as engrenagens.",
+        "L1": "Carcaça."
+      },
+      "known_errors": [
+        { "error_id": "carcaca_desalinhada", "message": "A carcaça está desalinhada com os pinos. Ajuste antes de pressionar." }
+      ]
+    },
+    {
+      "step_id": 6,
+      "name": "Apertar parafusos finais",
+      "expected_classes": ["parafuso_apertado"],
+      "instructions": {
+        "L4": "Aperte os quatro parafusos da carcaça em cruz, sem forçar.",
+        "L3": "Aperte os quatro parafusos em cruz.",
+        "L2": "Aperte os parafusos.",
+        "L1": "Parafusos."
+      },
+      "known_errors": []
+    }
+  ],
+  "fading_rule": {
+    "description": "Reduz um nível de assistência (ex.: L3 -> L2) após 2 execuções consecutivas corretas, na primeira tentativa e sem ajuda (HELP/REPEAT) na etapa.",
+    "consecutive_correct_required": 2,
+    "resets_on": ["KNOWN_ERROR", "HELP_REQUESTED"]
+  }
+}
