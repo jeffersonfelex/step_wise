@@ -11,6 +11,10 @@ import com.stepwise.procedure.Procedure
 import com.stepwise.procedure.ProcedureLoader
 import com.stepwise.resilience.LinkStateManager
 import com.stepwise.vision.VisualDetector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Controlador de sessão (CTRL no diagrama de arquitetura).
@@ -30,7 +34,8 @@ class SessionController(
     private val voiceInputManager: VoiceInputManager,
     private val ttsManager: TtsManager,
     private val procedureLoader: ProcedureLoader,
-    private val linkStateManager: LinkStateManager
+    private val linkStateManager: LinkStateManager,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
 
     /**
@@ -57,15 +62,33 @@ class SessionController(
         }
     }
 
+    /**
+     * Dispara a verificação. O frame capturado vive só dentro desta
+     * coroutine: nunca é atribuído a um campo da classe, nunca é escrito
+     * em disco nem enviado a qualquer lugar, e sai de escopo (liberado
+     * pelo garbage collector) assim que a função termina.
+     *
+     * Isso é o que sustenta, na prática, o checkpoint de privacidade:
+     * "descartamos o dado" não é uma frase do documento, é este trecho
+     * de código (ver docs/lgpd-privacidade.md).
+     */
     private fun handleVerify() {
         ttsManager.speak("Verificando") // resposta imediata: evita silêncio num dispositivo sem tela.
 
-        // TODO (coroutine): val frame = metaDatSessionManager.captureBestFrameFromStream()
-        //   ?: return applyAndSpeak(StepResult.INCONCLUSIVE)  // quality gate não achou frame bom o bastante
-        // val usable = frame != null
-        // val detection = visualDetector.detect(frame)
-        // val result = proceduralEngine.evaluate(detection, imageUsable = usable)
-        // applyAndSpeak(result)
+        scope.launch {
+            val frame = metaDatSessionManager.captureBestFrameFromStream()
+            metaDatSessionManager.stopStream() // câmera encerrada já aqui, independente do resultado
+
+            if (frame == null) {
+                applyAndSpeak(StepResult.INCONCLUSIVE) // quality gate não achou frame bom o bastante
+                return@launch
+            }
+
+            val detection = visualDetector.detect(frame)
+            val result = proceduralEngine.evaluate(detection, imageUsable = true)
+            applyAndSpeak(result)
+            // `frame` sai de escopo aqui: nunca foi persistido, nunca saiu do dispositivo.
+        }
     }
 
     private fun applyAndSpeak(result: StepResult) {

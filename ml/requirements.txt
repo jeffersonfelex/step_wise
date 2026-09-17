@@ -10,3 +10,7 @@ pillow>=10.3
 pandas>=2.2
 python-dotenv>=1.0
 tqdm>=4.66
+
+# Data augmentation (ver augment.py) - multiplica um dataset pequeno de
+# fotos reais em várias variações sintéticas, sem precisar de mais capturas.
+albumentations>=1.4

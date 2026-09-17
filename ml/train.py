@@ -4,6 +4,10 @@ Treino do detector visual customizado (peças da montagem de engrenagens).
 Uso:
     python train.py --data-dir ./data --output-dir ./models
 
+Se o dataset foi multiplicado com augment.py, aponte --data-dir para
+./data/augmented (usa data/augmented/annotations_augmented.csv, que já
+contém as anotações originais + as sintéticas).
+
 TODO: substituir pelo pipeline real (ex.: MediaPipe Model Maker) assim que
 o dataset anotado estiver disponível em DATASET_DIR (.env).
 """
