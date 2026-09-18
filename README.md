@@ -1,85 +1,315 @@
 # StepWise
 
-Tutor adaptativo para montagens mecânicas, guiado por áudio, para os óculos
-de realidade aumentada **Ray-Ban Meta Gen 2**. Verifica cada etapa de uma
-montagem por visão computacional local e reduz progressivamente o nível de
-assistência conforme o aprendiz demonstra domínio (fading adaptativo).
+StepWise e um tutor adaptativo para montagem pratica. O app guia o aprendiz por voz, recebe uma evidencia visual da etapa atual e decide de forma conservadora se a etapa esta correta, se ha um erro conhecido ou se a evidencia e inconclusiva.
 
-## Por que existe
+Este repositorio esta sendo preparado para a final do programa AI Glasses Brasil. O projeto principal e um app Android/Kotlin que roda no celular companion e, no evento, deve trocar as fontes locais de imagem pela fonte dos oculos Ray-Ban Meta via Meta DAT.
 
-Em aulas práticas de mecânica/mecatrônica, manuais estáticos obrigam o
-aprendiz a interromper a montagem para consultar o próximo passo. A
-StepWise acompanha o estado real da tarefa e guia por voz, sem tela e sem
-interromper as mãos ocupadas.
+## Estado atual
 
-## Como funciona (resumo)
+Validado no POCO Android 16:
 
-1. O aprendiz seleciona o procedimento (ex.: "Montagem de Engrenagens") e
-   diz "verificar" quando termina uma etapa.
-2. Os óculos capturam 1 frame sob demanda (Meta DAT v0.9); um Quality Gate
-   garante que a imagem é utilizável.
-3. Um detector visual local (MediaPipe / LiteRT) roda inteiramente no
-   smartphone e retorna classes, bounding boxes e scores.
-4. O motor procedural confronta as detecções com regras explícitas da
-   etapa e decide CORRECT, KNOWN_ERROR ou INCONCLUSIVE — sem LLM no
-   caminho crítico.
-5. O feedback é falado por Android TextToSpeech, roteado por Bluetooth aos
-   alto-falantes open-ear dos óculos.
-6. Acertos consecutivos reduzem o nível de assistência (fading L4→L1).
+- App Android compila, instala e abre.
+- TTS em portugues funciona na demo.
+- Captura PCM do microfone do celular funciona.
+- Parser de comandos `verificar`, `ajuda`, `repetir` funciona em testes e botoes simulados.
+- Inferencia TFLite local roda no app.
+- Demo controlada roda com estas fontes visuais:
+  - imagens fixas dos assets;
+  - foto escolhida pelo seletor nativo do Android;
+  - foto capturada pela camera do celular.
+- Todas as fontes passam pelo mesmo ciclo:
 
-Diagrama completo em [`docs/architecture-stepwise.mmd`](docs/architecture-stepwise.mmd).
+```text
+imagem -> TFLite -> motor procedural conservador -> UI -> TTS
+```
 
-## Estrutura do repositório
+Limite importante: o modelo visual atual prova o pipeline, mas ainda tem baixa qualidade. Ele nao deve ser usado para avanco automatico sem decisao conservadora ou novo ciclo de treino.
 
-    step_wise/
-    ├── android/      # App Android/Kotlin (core do produto)
-    ├── ml/            # Treino/exportação (offline) do detector visual
-    ├── docs/          # Diagrama de arquitetura e documentação
-    ├── .env.example   # Modelo de variáveis de ambiente
-    └── .gitignore
+## Estrutura do repositorio
 
-## Setup
+```text
+step_wise/
+  android/                         App Android/Kotlin
+  android/app/src/main/assets/     Modelos, procedimentos e imagens de diagnostico
+  dataset stepwise/                Dataset real fotografado do kit da torneira/conexoes
+  docs/                            Plano, ambiente validado e registros da preparacao
+  ml/                              Treino, avaliacao e artefatos de modelo
+  scripts/                         Scripts auxiliares de dataset/diagnostico
+```
 
-### 1. Variáveis de ambiente
+Documentos principais:
 
-    cp .env.example .env
-    # edite .env com os valores reais (chaves do Meta DAT, caminhos locais, etc.)
+- `docs/PLANO_ACAO_FINAL_STEPWISE.md`: roadmap detalhado da final.
+- `docs/ambiente-validado.md`: ambiente, versoes e validacoes executadas.
+- `docs/dataset-real-stepwise.md`: dataset, splits, modelo e metricas.
+- `docs/meta-ai-registro-real.md`: roteiro para pareamento/registro real dos oculos.
+- `docs/cameraaccess-validacao.md`: validacao do exemplo oficial CameraAccess/MDK.
 
-### 2. App Android (`android/`)
+## Requisitos
 
-Requer Android Studio (Ladybug ou mais recente) e JDK 17.
+### Notebook Windows
 
-    cd android
-    cp local.properties.example local.properties
-    # edite local.properties com o caminho do seu Android SDK
+Validado com:
 
-Abra a pasta `android/` no Android Studio e rode o módulo `app` em um
-dispositivo com Android 8.0+ (minSdk 26), pareado com os Ray-Ban Meta e
-com o Meta DAT configurado.
+- Windows 11.
+- Android Studio instalado.
+- Android SDK 36 e Build Tools 36.0.0.
+- JDK 17.
+- Gradle wrapper do projeto.
+- Platform-tools/ADB.
 
-### 3. Pipeline de ML (`ml/`)
+No workspace atual, alguns binarios locais foram usados em `.tools/`:
 
-    cd ml
-    python -m venv .venv
-    source .venv/bin/activate  # Windows: .venv\Scripts\activate
-    pip install -r requirements.txt
+```text
+.tools/android/platform-tools/adb.exe
+.tools/java/jdk-17.0.20.1+1
+.tools/gradle-cache
+.tools/android-user
+```
 
-Veja [`ml/README.md`](ml/README.md) para os passos de treino e exportação
-do modelo para LiteRT.
+Em uma maquina nova, voce pode usar Android Studio/JDK instalados globalmente, desde que o projeto compile com JDK 17.
 
-## Stack
+### Celular Android
 
-- **App:** Android nativo, Kotlin, Room (persistência local), Android
-  SpeechRecognizer (ASR), Android TextToSpeech (TTS).
-- **Óculos:** Ray-Ban Meta Gen 2 via **Meta DAT v0.9** (captura de frame
-  sob demanda, sem streaming contínuo).
-- **Visão computacional:** detector customizado local via MediaPipe /
-  LiteRT — sem nuvem no caminho crítico.
-- **ML (offline):** Python, para preparar o dataset e exportar o modelo
-  usado pelo app.
+Validado com POCO Android 16:
 
-## Status
+- Depuracao USB ativada.
+- Instalacao via USB ativada.
+- Permissoes do app concedidas quando solicitadas:
+  - microfone;
+  - camera;
+  - dispositivos proximos/Bluetooth.
 
-MVP em desenvolvimento (hackathon). Ver `docs/` e os slides do projeto no
-Project do Claude para o contexto completo (problema, decisões técnicas e
-trade-offs).
+### Linux/WSL para treino
+
+O treino foi validado em Ubuntu WSL2 com Python 3.10 e TensorFlow 2.15.1. O app Android pode ser compilado no Windows; o Linux e necessario apenas para reproduzir treino/avaliacao com o ambiente usado.
+
+## Rodar o app Android
+
+A partir da raiz do repositorio no PowerShell:
+
+```powershell
+$env:GRADLE_USER_HOME='D:\Documents\GitHub\step_wise\.tools\gradle-cache'
+$env:ANDROID_USER_HOME='D:\Documents\GitHub\step_wise\.tools\android-user'
+$env:JAVA_HOME='D:\Documents\GitHub\step_wise\.tools\java\jdk-17.0.20.1+1'
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH"
+
+cd android
+.\gradlew.bat ':app:assembleDebug' ':app:testDebugUnitTest' '--offline'
+```
+
+Se voce estiver em outra maquina, ajuste os caminhos ou use o JDK 17 instalado no sistema.
+
+### Instalar no celular
+
+Com o celular conectado e autorizado no ADB:
+
+```powershell
+cd D:\Documents\GitHub\step_wise
+
+$env:GRADLE_USER_HOME='D:\Documents\GitHub\step_wise\.tools\gradle-cache'
+$env:ANDROID_USER_HOME='D:\Documents\GitHub\step_wise\.tools\android-user'
+$env:JAVA_HOME='D:\Documents\GitHub\step_wise\.tools\java\jdk-17.0.20.1+1'
+$env:PATH="$env:JAVA_HOME\bin;$env:PATH"
+
+cd android
+.\gradlew.bat ':app:installDebug' '--offline'
+cd ..
+.\.tools\android\platform-tools\adb.exe shell monkey -p com.stepwise 1
+```
+
+Se usar ADB global:
+
+```powershell
+adb devices -l
+adb shell monkey -p com.stepwise 1
+```
+
+Observacao: neste notebook, o Kotlin daemon pode emitir `AccessDeniedException` em `C:\Users\user\AppData\Local\kotlin\daemon`. O Gradle tem usado fallback e o build continua. O que importa e o final `BUILD SUCCESSFUL`.
+
+## O que testar no app
+
+Na tela principal:
+
+1. Autorize as permissoes solicitadas.
+2. Em **Demo controlada do procedimento**, teste:
+   - `Simular acerto confiavel`;
+   - `Simular erro conhecido`;
+   - `Simular inconclusivo`;
+   - `Verificar com imagem local`;
+   - `Selecionar foto e verificar`;
+   - `Tirar foto e verificar`;
+   - `Ajuda`;
+   - `Repetir instrucao`.
+3. Em **Comandos de voz simulados**, teste:
+   - `Voz: verificar`;
+   - `Voz: ajuda`;
+   - `Voz: repetir`;
+   - `Voz: desconhecido`.
+4. Em **Teste de microfone PCM**, toque em `Testar microfone por 3 segundos` e confirme que RMS/bytes nao ficam zerados.
+5. Em **Diagnostico visual local**, toque em `Rodar diagnostico visual local` e confirme que aparecem resultados top/conf.
+
+## Arquitetura atual do app
+
+Caminho de decisao:
+
+```text
+UI / voz / fonte visual local
+  -> StepwiseImageClassifier
+  -> ProceduralEngine
+  -> DemoSessionController
+  -> UI + TtsManager
+```
+
+Classes importantes:
+
+```text
+android/app/src/main/java/com/stepwise/ui/MainActivity.kt
+android/app/src/main/java/com/stepwise/session/DemoSessionController.kt
+android/app/src/main/java/com/stepwise/engine/ProceduralEngine.kt
+android/app/src/main/java/com/stepwise/audio/TtsManager.kt
+android/app/src/main/java/com/stepwise/audio/VoiceInputManager.kt
+android/app/src/main/java/com/stepwise/audio/MicrophoneCaptureManager.kt
+android/app/src/main/java/com/stepwise/vision/StepwiseImageClassifier.kt
+```
+
+Assets importantes:
+
+```text
+android/app/src/main/assets/models/stepwise_real_classifier_v1.tflite
+android/app/src/main/assets/models/stepwise_real_classifier_v1_labels.json
+android/app/src/main/assets/models/stepwise_real_classifier_v1_manifest.json
+android/app/src/main/assets/procedures/montagem_engrenagens.json
+android/app/src/main/assets/diagnostic_samples/
+```
+
+## Dataset
+
+O dataset real esta em:
+
+```text
+dataset stepwise/
+```
+
+Resumo atual:
+
+- 581 imagens.
+- Classes de pecas isoladas, estados de montagem e erros.
+- Splits derivados em `ml/data/stepwise_real/`:
+  - train: 411;
+  - val: 85;
+  - test: 85.
+
+Regenerar splits a partir da raiz:
+
+```powershell
+python scripts/prepare_stepwise_dataset.py --dataset-root "dataset stepwise" --output-dir ml/data/stepwise_real
+```
+
+Detalhes completos em `docs/dataset-real-stepwise.md`.
+
+## Treino do modelo visual
+
+Use WSL/Ubuntu com Python 3.10. Exemplo:
+
+```bash
+cd /mnt/d/Documents/GitHub/step_wise
+python3.10 -m venv ~/.venvs/stepwise-train
+source ~/.venvs/stepwise-train/bin/activate
+pip install -r ml/requirements-train.lock.txt
+```
+
+Treinar o classificador real:
+
+```bash
+python ml/train.py \
+  --dataset-root "dataset stepwise" \
+  --index-dir ml/data/stepwise_real \
+  --output-dir ml/models/stepwise_real_classifier_v1 \
+  --epochs 3
+```
+
+Avaliar TFLite:
+
+```bash
+python ml/evaluate.py \
+  --dataset-root "dataset stepwise" \
+  --index-dir ml/data/stepwise_real \
+  --split test \
+  --model ml/models/stepwise_real_classifier_v1/stepwise_real_classifier_v1.tflite \
+  --output-dir ml/models/stepwise_real_classifier_v1/eval
+```
+
+Copiar modelo novo para o app, se substituir o atual:
+
+```powershell
+Copy-Item ml\models\stepwise_real_classifier_v1\stepwise_real_classifier_v1.tflite android\app\src\main\assets\models\stepwise_real_classifier_v1.tflite -Force
+Copy-Item ml\models\stepwise_real_classifier_v1\labels.json android\app\src\main\assets\models\stepwise_real_classifier_v1_labels.json -Force
+Copy-Item ml\models\stepwise_real_classifier_v1\manifest.json android\app\src\main\assets\models\stepwise_real_classifier_v1_manifest.json -Force
+```
+
+Depois recompile e rode os testes Android.
+
+## Testes uteis
+
+Unitarios locais:
+
+```powershell
+cd android
+.\gradlew.bat ':app:testDebugUnitTest' '--offline'
+```
+
+Build debug:
+
+```powershell
+cd android
+.\gradlew.bat ':app:assembleDebug' '--offline'
+```
+
+Instrumentado no POCO, quando conectado:
+
+```powershell
+cd android
+.\gradlew.bat ':app:connectedDebugAndroidTest' '--offline'
+```
+
+## Integracao com oculos
+
+A integracao real com Ray-Ban Meta ainda depende do hardware no evento.
+
+Preparacao ja feita:
+
+- Meta AI instalado e Developer Mode ativado no celular.
+- CameraAccess oficial do DAT foi compilado/instalado e testado com Mock Device Kit.
+- Roteiro offline de registro real esta em `docs/meta-ai-registro-real.md`.
+
+No evento, a fonte visual local deve ser trocada por frames/capturas vindos do DAT, mantendo o mesmo contrato:
+
+```text
+frame dos oculos -> pre-processamento -> StepwiseImageClassifier/Detector -> ProceduralEngine -> UI/TTS
+```
+
+## Limites conhecidos
+
+- O modelo visual atual tem qualidade baixa e deve ser tratado como prova de pipeline.
+- O motor ja e conservador: baixa confianca, classe inesperada ou imagem ruim devem virar `INCONCLUSIVE`.
+- Reconhecimento de voz real offline ainda nao esta conectado a Vosk/Sherpa; hoje existem parser, botoes simulados e captura PCM validada.
+- A camera do celular e uma simulacao local; a perspectiva dos oculos precisa ser validada no evento.
+- Fading/persistencia completa ainda precisa de ciclo adicional com Room/controlador real.
+
+## Proximo roteiro recomendado
+
+1. Ensaiar a demo completa no POCO com o kit fisico.
+2. Registrar um roteiro de apresentacao: ordem de cliques, falas e explicacao dos limites.
+3. Melhorar o modelo visual ou preparar contingencia deterministica marcada/HSV/ArUco.
+4. Conectar reconhecimento offline real aos comandos `verificar`, `ajuda`, `repetir`.
+5. No evento, trocar a fonte local de imagem pela fonte DAT dos oculos.
+
+## Referencias internas
+
+- Plano final: `docs/PLANO_ACAO_FINAL_STEPWISE.md`
+- Ambiente validado: `docs/ambiente-validado.md`
+- Dataset/modelo: `docs/dataset-real-stepwise.md`
+- Treino B17-B19: `docs/b17-b19-treino-exportacao.md`
+- CameraAccess/DAT: `docs/cameraaccess-validacao.md`
+- Registro real Meta AI/DAT: `docs/meta-ai-registro-real.md`

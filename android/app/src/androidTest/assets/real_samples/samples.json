@@ -1,0 +1,22 @@
+﻿[
+    {
+        "asset":  "real_samples/S1_torneira_001.jpg",
+        "expected":  "S1_torneira"
+    },
+    {
+        "asset":  "real_samples/S2_torneira_P2_001.jpg",
+        "expected":  "S2_torneira_P2"
+    },
+    {
+        "asset":  "real_samples/S3_torneira_P2_P3_001.jpg",
+        "expected":  "S3_torneira_P2_P3"
+    },
+    {
+        "asset":  "real_samples/E1_ordem_errada_001.jpg",
+        "expected":  "E1_ordem_errada"
+    },
+    {
+        "asset":  "real_samples/E2_peca_invertida_001.jpg",
+        "expected":  "E2_peca_invertida"
+    }
+]

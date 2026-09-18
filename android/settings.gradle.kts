@@ -10,9 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // Repositório de distribuição do Meta DAT (Device Access Toolkit) -
-        // ajustar conforme instruções oficiais do SDK Ray-Ban Meta.
-        // maven { url = uri("https://<meta-dat-maven-repo>") }
+
     }
 }
 

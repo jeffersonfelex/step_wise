@@ -1,92 +1,113 @@
-{
-  "procedure_id": "montagem_engrenagens",
-  "title": "Montagem de Engrenagens",
+﻿{
+  "procedure_id": "montagem_torneira_stepwise_v1",
+  "title": "Montagem de Torneira com Conexões",
   "assistance_levels": ["L4", "L3", "L2", "L1"],
   "steps": [
     {
       "step_id": 1,
-      "name": "Posicionar eixo principal",
-      "expected_classes": ["eixo_principal"],
+      "name": "Separar e orientar a torneira",
+      "expected_classes": ["S1_torneira"],
       "instructions": {
-        "L4": "Pegue o eixo principal e encaixe-o na base, alinhado ao furo central.",
-        "L3": "Encaixe o eixo principal na base.",
-        "L2": "Posicione o eixo.",
-        "L1": "Eixo."
+        "L4": "Pegue a torneira principal. Deixe a rosca lateral voltada para a sequência de montagem e mantenha a peça firme sobre a bancada.",
+        "L3": "Pegue a torneira e deixe a rosca lateral pronta para receber a próxima peça.",
+        "L2": "Prepare a torneira.",
+        "L1": "Torneira."
       },
       "known_errors": [
-        { "error_id": "eixo_invertido", "message": "O eixo parece invertido. Gire 180 graus e encaixe novamente." }
+        { "error_id": "E2_peca_invertida", "message": "A torneira ou a peça parecem invertidas. Gire a orientação antes de continuar." },
+        { "error_id": "E4_peca_solta", "message": "Há peça solta na área. Encoste a peça correta na rosca antes de verificar." }
       ]
     },
     {
       "step_id": 2,
-      "name": "Instalar engrenagem azul",
-      "expected_classes": ["engrenagem_azul"],
+      "name": "Enroscar P2 na torneira",
+      "expected_classes": ["S2_torneira_P2"],
       "instructions": {
-        "L4": "Instale a engrenagem azul sobre o eixo principal, com os dentes voltados para fora.",
-        "L3": "Instale a engrenagem azul no eixo.",
-        "L2": "Engrenagem azul no eixo.",
-        "L1": "Azul."
+        "L4": "Pegue a peça P2 e enrosque na saída lateral da torneira até ficar alinhada e sem folga visível.",
+        "L3": "Enrosque a P2 na saída lateral da torneira.",
+        "L2": "Coloque a P2.",
+        "L1": "P2."
       },
       "known_errors": [
-        { "error_id": "engrenagem_errada", "message": "Essa não é a engrenagem azul. Verifique a cor antes de encaixar." }
+        { "error_id": "E1_ordem_errada", "message": "A ordem parece incorreta. A próxima peça deve ser a P2." },
+        { "error_id": "E2_peca_invertida", "message": "A P2 parece invertida. Vire a peça e tente enroscar novamente." },
+        { "error_id": "E4_peca_solta", "message": "A P2 ainda parece solta. Enrosque um pouco mais antes de verificar." }
       ]
     },
     {
       "step_id": 3,
-      "name": "Instalar engrenagem vermelha",
-      "expected_classes": ["engrenagem_vermelha"],
+      "name": "Enroscar P3 no conjunto",
+      "expected_classes": ["S3_torneira_P2_P3"],
       "instructions": {
-        "L4": "Instale a engrenagem vermelha no eixo secundário, engrenando com a azul.",
-        "L3": "Instale a engrenagem vermelha, engrenando com a azul.",
-        "L2": "Engrenagem vermelha, engrenando.",
-        "L1": "Vermelha."
+        "L4": "Pegue a peça P3 e conecte depois da P2, mantendo o conjunto reto para não forçar a rosca.",
+        "L3": "Conecte a P3 depois da P2.",
+        "L2": "Coloque a P3.",
+        "L1": "P3."
       },
       "known_errors": [
-        { "error_id": "engrenagens_nao_engrenadas", "message": "As engrenagens não estão engrenando corretamente. Ajuste a distância entre os eixos." }
+        { "error_id": "E1_ordem_errada", "message": "A sequência parece fora de ordem. Depois da P2 vem a P3." },
+        { "error_id": "E3_peca_ausente", "message": "A P3 não aparece conectada. Verifique se ela foi colocada." },
+        { "error_id": "E4_peca_solta", "message": "A peça parece solta. Ajuste a rosca antes de seguir." }
       ]
     },
     {
       "step_id": 4,
-      "name": "Fixar trava do eixo secundário",
-      "expected_classes": ["trava_eixo"],
+      "name": "Enroscar P4 no conjunto",
+      "expected_classes": ["S4_torneira_P2_P3_P4"],
       "instructions": {
-        "L4": "Encaixe a trava no eixo secundário para impedir que a engrenagem vermelha se solte.",
-        "L3": "Encaixe a trava no eixo secundário.",
-        "L2": "Trave o eixo secundário.",
-        "L1": "Trava."
+        "L4": "Pegue a peça P4 e enrosque depois da P3. Confira se ela entrou reta, sem cruzar a rosca.",
+        "L3": "Enrosque a P4 depois da P3.",
+        "L2": "Coloque a P4.",
+        "L1": "P4."
       },
-      "known_errors": []
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A peça colocada parece estar fora da ordem. A etapa atual é a P4." },
+        { "error_id": "E2_peca_invertida", "message": "A P4 parece invertida. Vire a peça antes de enroscar." },
+        { "error_id": "E3_peca_ausente", "message": "A P4 não foi identificada no conjunto." }
+      ]
     },
     {
       "step_id": 5,
-      "name": "Instalar carcaça de proteção",
-      "expected_classes": ["carcaca"],
+      "name": "Enroscar P5 no conjunto",
+      "expected_classes": ["S5_torneira_P2_P3_P4_P5"],
       "instructions": {
-        "L4": "Posicione a carcaça de proteção sobre o conjunto de engrenagens e encaixe nos quatro pinos.",
-        "L3": "Encaixe a carcaça sobre as engrenagens.",
-        "L2": "Carcaça sobre as engrenagens.",
-        "L1": "Carcaça."
+        "L4": "Pegue a peça P5 e conecte depois da P4. Pare quando ela estiver firme, sem apertar em excesso.",
+        "L3": "Conecte a P5 depois da P4.",
+        "L2": "Coloque a P5.",
+        "L1": "P5."
       },
       "known_errors": [
-        { "error_id": "carcaca_desalinhada", "message": "A carcaça está desalinhada com os pinos. Ajuste antes de pressionar." }
+        { "error_id": "E1_ordem_errada", "message": "A ordem parece incorreta. Agora a peça esperada é a P5." },
+        { "error_id": "E3_peca_ausente", "message": "A P5 não aparece no conjunto." },
+        { "error_id": "E4_peca_solta", "message": "A peça ainda parece solta. Enrosque até ficar firme." }
       ]
     },
     {
       "step_id": 6,
-      "name": "Apertar parafusos finais",
-      "expected_classes": ["parafuso_apertado"],
+      "name": "Finalizar com P6",
+      "expected_classes": ["S6_final"],
       "instructions": {
-        "L4": "Aperte os quatro parafusos da carcaça em cruz, sem forçar.",
-        "L3": "Aperte os quatro parafusos em cruz.",
-        "L2": "Aperte os parafusos.",
-        "L1": "Parafusos."
+        "L4": "Pegue a peça P6 e faça a conexão final. Confira visualmente se todas as peças estão na sequência correta.",
+        "L3": "Conecte a P6 e confira o conjunto final.",
+        "L2": "Finalize com a P6.",
+        "L1": "P6."
       },
-      "known_errors": []
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A montagem final parece fora da sequência esperada." },
+        { "error_id": "E3_peca_ausente", "message": "Ainda parece faltar uma peça antes de finalizar." },
+        { "error_id": "E4_peca_solta", "message": "Há peça solta. Aperte visualmente o conjunto antes de concluir." }
+      ]
     }
   ],
   "fading_rule": {
-    "description": "Reduz um nível de assistência (ex.: L3 -> L2) após 2 execuções consecutivas corretas, na primeira tentativa e sem ajuda (HELP/REPEAT) na etapa.",
+    "description": "Reduz um nível de assistência após execuções corretas repetidas da mesma etapa, sem ajuda e sem erro conhecido.",
     "consecutive_correct_required": 2,
     "resets_on": ["KNOWN_ERROR", "HELP_REQUESTED"]
+  },
+  "decision_policy": {
+    "model_status": "technical_pipeline_validated_not_reliable_for_automatic_advance",
+    "minimum_confidence_for_correct": 0.85,
+    "minimum_confidence_for_known_error": 0.85,
+    "fallback_result": "INCONCLUSIVE"
   }
 }
