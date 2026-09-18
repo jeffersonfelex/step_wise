@@ -3,16 +3,22 @@
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.CAMERA" /> <!-- controle via Meta DAT -->
-    <uses-permission android:name="android.permission.INTERNET" /> <!-- telemetria opcional, fora do caminho crítico -->
+    <uses-permission android:name="android.permission.CAMERA" /> <!-- futura fonte local de testes; DAT tem autorização própria -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- comunicação e registro do SDK DAT -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <application
         android:name=".StepWiseApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:label="StepWise"
         android:theme="@style/Theme.StepWise"
         android:supportsRtl="true">
+
+        <meta-data android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT" android:value="true" />
+        <meta-data android:name="com.meta.wearable.mwdat.CRASH_REPORTING_OPT_OUT" android:value="true" />
 
         <activity
             android:name=".ui.MainActivity"

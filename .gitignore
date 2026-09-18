@@ -1,6 +1,10 @@
 # Ambiente
 .env
 *.env.local
+.tools/
+.venv-tools/
+.venv-train/
+.pytest_cache/
 
 # Android / Gradle
 android/local.properties
@@ -30,3 +34,10 @@ ml/data/*
 .DS_Store
 Thumbs.db
 *.log
+
+# Arquivos locais de preparacao/leitura
+.tmp_analysis/
+.tmp_pdf_reader/
+AI Glasses Brasil/
+# Dataset bruto local; usar Git LFS/Drive se precisar versionar imagens
+/dataset stepwise/

@@ -8,14 +8,14 @@ import com.stepwise.procedure.ProcedureLoader
 import com.stepwise.resilience.LinkStateManager
 
 /**
- * Controlador de sessão (CTRL no diagrama de arquitetura).
+ * Controlador de sessÃ£o (CTRL no diagrama de arquitetura).
  *
  * Orquestra:
  *  - VOICE/UI -> comandos (VERIFY, HELP, REPEAT)
  *  - CTRL -> DAT (VERIFY: dispara captura de 1 frame)
- *  - CTRL -> ENG (HELP/REPEAT: solicita instrução sem nova captura)
+ *  - CTRL -> ENG (HELP/REPEAT: solicita instruÃ§Ã£o sem nova captura)
  *  - CTRL -> PROC (carrega procedure_id ativo)
- *  - REC -> CTRL (reconexão / restauração de estado)
+ *  - REC -> CTRL (reconexÃ£o / restauraÃ§Ã£o de estado)
  */
 class SessionController(
     private val metaDatSessionManager: MetaDatSessionManager,
@@ -38,11 +38,12 @@ class SessionController(
             VoiceCommand.VERIFY -> handleVerify()
             VoiceCommand.HELP -> handleHelp()
             VoiceCommand.REPEAT -> handleRepeat()
+            VoiceCommand.UNKNOWN -> handleUnknown()
         }
     }
 
     private fun handleVerify() {
-        // TODO: responder "Verificando" imediatamente via TTS (evitar silêncio).
+        // TODO: responder "Verificando" imediatamente via TTS (evitar silÃªncio).
         // TODO: metaDatSessionManager.capturePhoto() -> QualityGate -> VisualDetector -> engine.evaluate(...)
     }
 
@@ -54,8 +55,12 @@ class SessionController(
         // TODO: engine.currentInstruction(repeat = true) -> ttsManager.speak(...)
     }
 
-    /** Chamado pelo LinkStateManager após reconexão bem-sucedida. */
+    private fun handleUnknown() {
+        // Comando rejeitado: nao captura imagem, nao altera estado e nao avanca etapa.
+    }
+
+    /** Chamado pelo LinkStateManager apÃ³s reconexÃ£o bem-sucedida. */
     fun onReconnected() {
-        // TODO: revalidar estado (REC -> ENG: "restaurar + revalidar") antes de permitir novo avanço.
+        // TODO: revalidar estado (REC -> ENG: "restaurar + revalidar") antes de permitir novo avanÃ§o.
     }
 }

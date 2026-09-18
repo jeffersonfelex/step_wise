@@ -1,0 +1,21 @@
+{
+  "labels": [
+    "P1_torneira",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "pecas_separadas_juntas",
+    "S1_torneira",
+    "S2_torneira_P2",
+    "S3_torneira_P2_P3",
+    "S4_torneira_P2_P3_P4",
+    "S5_torneira_P2_P3_P4_P5",
+    "S6_final",
+    "E1_ordem_errada",
+    "E2_peca_invertida",
+    "E3_peca_ausente",
+    "E4_peca_solta"
+  ]
+}

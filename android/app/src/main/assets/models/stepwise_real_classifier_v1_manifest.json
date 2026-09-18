@@ -1,0 +1,52 @@
+{
+  "name": "stepwise_real_classifier_v1",
+  "task": "image_classification",
+  "dataset_sha256_index": "43309df0b7dd086c904266a54d6129682616e6b86d28d7c083e4c20a4530c1d1",
+  "labels": [
+    "P1_torneira",
+    "P2",
+    "P3",
+    "P4",
+    "P5",
+    "P6",
+    "pecas_separadas_juntas",
+    "S1_torneira",
+    "S2_torneira_P2",
+    "S3_torneira_P2_P3",
+    "S4_torneira_P2_P3_P4",
+    "S5_torneira_P2_P3_P4_P5",
+    "S6_final",
+    "E1_ordem_errada",
+    "E2_peca_invertida",
+    "E3_peca_ausente",
+    "E4_peca_solta"
+  ],
+  "input": {
+    "shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "preprocess": "mobilenet_v2 preprocess_input RGB resized square"
+  },
+  "splits": {
+    "train": 411,
+    "val": 85,
+    "test": 85
+  },
+  "test": {
+    "loss": 3.2831,
+    "accuracy": 0.1647,
+    "source": "training run before inference export fix"
+  },
+  "tflite": {
+    "path": "ml/models/stepwise_real_classifier_v1/stepwise_real_classifier_v1.tflite",
+    "bytes": 1687184,
+    "sha256": "222df1b55815b7e6add809e7ae0709c6522db65f2f08bfaff121397cde7c8720"
+  },
+  "limits": [
+    "Treino rapido com pesos aleatorios; usar como validacao tecnica inicial, nao modelo final.",
+    "Validacao no POCO com imagens reais ainda pendente."
+  ]
+}
