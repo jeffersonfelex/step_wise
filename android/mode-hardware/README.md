@@ -7,6 +7,7 @@ para cá preservando seus packages Kotlin, sem reimplementar o detector ou motor
 - `engine`: motor procedural e fading.
 - `procedure`: definição e carregamento de procedimentos físicos.
 - `session/SessionController.kt`: controlador da montagem.
+- `hardware/HardwareTutorActivity.kt`: guia manual aberto pelo seletor de modos.
 - `data/db`: checkpoints Room do procedimento físico; esquema preservado.
 - `src/main/assets/procedures`: procedimentos empacotados no APK automaticamente.
 - `src/test`: testes do motor e composição de detectores.
@@ -22,7 +23,13 @@ Da pasta `android/`, com JDK 17 e Android SDK 34:
 ./gradlew :mode-hardware:testDebugUnitTest
 ```
 
-Os TODOs existentes continuam pendentes (incluindo captura real e avaliação de
-classes no motor). A nova tela do app seleciona o modo, mas não inicia a sessão.
+O botão Hardware abre o procedimento de engrenagens carregado pelo `ProcedureLoader`
+a partir do JSON. O guia mostra as seis etapas, permite ouvir a instrução com o TTS
+do Android, voltar, confirmar manualmente e reiniciar. A posição é preservada em
+recriações da tela. A confirmação manual não chama `applyResult(CORRECT)` nem gera
+evidência visual ou checkpoint no motor automático.
+
+Os TODOs de captura real, controlador automático e avaliação de classes no motor
+continuam pendentes. O guia avisa que a montagem não foi verificada automaticamente.
 Mudanças na integração física dos óculos devem ser feitas em `:platform-android`
 e coordenadas com a equipe software, que também usa os óculos.

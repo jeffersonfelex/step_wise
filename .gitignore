@@ -1,6 +1,8 @@
 # Ambiente
 .env
 *.env.local
+*.token
+scripts/__pycache__/
 
 # Android / Gradle
 android/local.properties

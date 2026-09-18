@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":platform-android"))
     implementation(project(":mode-hardware"))
     implementation(project(":mode-software"))
+    implementation(project(":software-android"))
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")

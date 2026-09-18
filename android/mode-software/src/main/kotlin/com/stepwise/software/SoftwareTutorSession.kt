@@ -2,6 +2,7 @@ package com.stepwise.software
 
 import com.stepwise.core.FrameSource
 import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 /**
  * Provider-independent session. Call lifecycle/input methods serially from the owner
@@ -12,7 +13,7 @@ class SoftwareTutorSession private constructor(
     private val connection: SoftwareTutorConnection,
     private val frames: FrameSource,
 ) {
-    private var closed = false
+    @Volatile private var closed = false
     val events: Flow<SoftwareTutorEvent> get() = connection.events
 
     suspend fun send(input: SoftwareTutorInput) {
@@ -21,11 +22,11 @@ class SoftwareTutorSession private constructor(
     }
 
     /** False means no usable capture: do not ask the model to verify an unseen state. */
-    suspend fun verify(goalId: String): Boolean {
+    suspend fun verify(goalId: String, requestId: String = UUID.randomUUID().toString()): Boolean {
         check(!closed) { "Sessão encerrada" }
         require(goalId.isNotBlank())
         val frame = frames.capture() ?: return false
-        send(SoftwareTutorInput.Verify(frame, goalId))
+        send(SoftwareTutorInput.Verify(frame, goalId, requestId))
         return true
     }
 

@@ -5,7 +5,11 @@
 ```mermaid
 flowchart TD
     app[app: composição e seleção] --> hardware[mode-hardware]
-    app --> software[mode-software]
+    app --> ui[software-android]
+    ui --> software[mode-software]
+    ui --> platform
+    ui --> core
+    app --> software
     app --> platform[platform-android]
     app --> core[core]
     hardware --> platform
@@ -23,6 +27,7 @@ A integração `GlassesFrameSource` adapta o gerenciador DAT ao contrato comum
 
 | Diretório | Responsabilidade | Quem altera normalmente |
 |---|---|---|
+| `android/software-android/` | Interface e áudio do tutor CAD | Equipe software |
 | `android/mode-software/` | Desenho técnico, conversa, planejamento e avaliação CAD | Equipe software |
 | `android/mode-hardware/`, `ml/` | Montagem física, detectores, procedimentos e checkpoints físicos | Equipe hardware |
 | `android/core/` | Contratos de imagem/áudio, objetivos e resultados | Mudanças coordenadas |
@@ -78,11 +83,14 @@ entre módulos e dependências Gradle diretas; o compilador é a verificação d
 
 ## Estado real após a reorganização
 
-A interface permite selecionar hardware/software e informa que as sessões ainda
-estão em desenvolvimento. Não conecta provedores nem inicia captura. O modo
-software tem contratos, orquestração mínima e testes falsos; não é um tutor CAD
-pronto. A implementação hardware deste checkout continua com seus TODOs.
+A interface software possui seleção de desenho, conexão explícita ao Gemini Live,
+plano revisável, conversa por texto/áudio e verificação com imagem. Os testes usam
+servidor simulado: ainda é necessária validação real no POCO com token temporário.
+O hardware abre um guia manual de engrenagens, com instruções em texto/voz e
+confirmação pelo usuário. A avaliação visual automática e a captura DAT continuam
+com seus TODOs; o guia manual não grava acertos no motor automático.
+Veja o [roteiro do primeiro fluxo](modo-software-primeiro-fluxo.md).
 
 A arquitetura física anterior está em `architecture-stepwise.mmd`. A política
-legada de privacidade é específica do hardware; antes de integrar um provedor
-remoto no software, documentar os fluxos reais de imagem e áudio desse modo.
+legada de privacidade é específica do hardware. O fluxo de dados do software
+está documentado no roteiro acima; a política local do hardware não se aplica a ele.

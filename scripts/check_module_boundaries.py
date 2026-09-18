@@ -9,7 +9,8 @@ ALLOWED = {
     "platform-android": {"core"},
     "mode-hardware": {"core", "platform-android"},
     "mode-software": {"core"},
-    "app": {"core", "platform-android", "mode-hardware", "mode-software"},
+    "software-android": {"core", "mode-software", "platform-android"},
+    "app": {"core", "platform-android", "mode-hardware", "mode-software", "software-android"},
 }
 
 
@@ -41,7 +42,7 @@ def check() -> list[str]:
             targets = {
                 owner for symbol, owner in owners.items()
                 if imported == symbol or imported.startswith(symbol + ".")
-                or (imported.endswith(".*") and symbol.startswith(imported[:-1]))
+                or (imported.endswith(".*") and symbol.rsplit(".", 1)[0] == imported[:-2])
             }
             for target in targets:
                 if target != module and target not in ALLOWED[module]:
@@ -60,4 +61,4 @@ if __name__ == "__main__":
     if failures:
         print("\n".join(failures), file=sys.stderr)
         sys.exit(1)
-    print("Module boundaries OK: core, platform-android, mode-hardware, mode-software, app")
+    print("Module boundaries OK: " + ", ".join(ALLOWED))

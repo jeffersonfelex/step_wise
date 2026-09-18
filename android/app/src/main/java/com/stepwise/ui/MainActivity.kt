@@ -1,6 +1,7 @@
 package com.stepwise.ui
 
 import android.os.Bundle
+import android.content.Intent
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -8,7 +9,9 @@ import com.google.android.material.button.MaterialButton
 import com.stepwise.R
 import com.stepwise.core.TutorMode
 import com.stepwise.hardware.HardwareMode
+import com.stepwise.hardware.HardwareTutorActivity
 import com.stepwise.software.SoftwareMode
+import com.stepwise.software.android.CadTutorActivity
 
 /**
  * Composition shell. Mode-specific workflows belong in their modules.
@@ -35,11 +38,17 @@ class MainActivity : AppCompatActivity() {
         })
         layout.addView(MaterialButton(this).apply {
             text = getString(R.string.mode_software)
-            setOnClickListener { selectMode(SoftwareMode.mode) }
+            setOnClickListener {
+                selectMode(SoftwareMode.mode)
+                startActivity(Intent(this@MainActivity, CadTutorActivity::class.java))
+            }
         })
         layout.addView(MaterialButton(this).apply {
             text = getString(R.string.mode_hardware)
-            setOnClickListener { selectMode(HardwareMode.mode) }
+            setOnClickListener {
+                selectMode(HardwareMode.mode)
+                startActivity(Intent(this@MainActivity, HardwareTutorActivity::class.java))
+            }
         })
         status = TextView(this).apply { textSize = 18f }
         layout.addView(status)

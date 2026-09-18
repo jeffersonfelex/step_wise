@@ -1,52 +1,57 @@
-# Modo software — ponto de partida
+# Modo software — tutor CAD
 
-Este é o diretório de trabalho da tutoria CAD. Kotlin/JVM, sem Android SDK,
-Meta DAT, detectores de peças ou dependências de um provedor de IA.
-Os óculos continuam sendo a entrada de imagem e voz em produção.
+Domínio Kotlin/JVM e adaptador Gemini Live. Independente de detectores físicos,
+Android SDK e Meta DAT. A interface e áudio Android estão em `../software-android/`.
 
-## Implementado nesta base
+## Fluxo implementado
 
-- `CadTask`: desenho técnico, objetivo e aplicação CAD (Fusion 360 por padrão).
-- `SoftwareTutorProvider` / `SoftwareTutorConnection`: conexão substituível com
-  IA local ou remota; entradas de texto, PCM, verificação com imagem e interrupção.
-- `SoftwareTutorEvent`: texto e áudio incrementais, plano proposto, avaliação,
-  término de turno e erro.
-- `SoftwareTutorSession`: ciclo de vida e captura de evidência via `FrameSource`.
-  Sem imagem, `verify` retorna `false` e não envia uma verificação ao modelo.
-- Testes com provedor e captura falsos, executáveis sem chaves ou hardware.
+1. Selecionar uma imagem do desenho e informar o objetivo (Fusion 360 por padrão).
+2. Conectar explicitamente com um token temporário; o desenho é enviado ao Gemini.
+3. Receber e revisar um plano de até 20 etapas antes de aceitá-lo.
+4. Conversar por texto ou PCM, com resposta falada em streaming e transcrição.
+5. Verificar uma etapa com uma imagem e receber `CORRECT`, `KNOWN_ERROR` ou
+   `INCONCLUSIVE`. A avaliação precisa corresponder ao objetivo e à tentativa atuais.
+6. Confirmar o avanço no app, habilitado somente após avaliação correta.
 
-Nenhum provedor real está conectado. Os testes não simulam competência CAD;
-verificam os contratos e o fluxo. Não há envio à nuvem nesta alteração.
+O modelo não opera o Fusion nem mede diretamente sua geometria. A qualidade da
+orientação depende das imagens e do modelo e ainda precisa ser avaliada em bancada.
 
-## Como testar
+## Arquivos principais
 
-Da pasta `android/`, com JDK 17:
+- `CadProgress.kt`: plano aceito, etapa atual, correlação de tentativas e avanço manual.
+- `SoftwareTutorProvider.kt`: entradas e eventos independentes do fornecedor.
+- `SoftwareTutorSession.kt`: conexão e captura via `FrameSource`.
+- `providers/GeminiLiveProvider.kt`: WebSocket com token temporário e timeout de setup.
+- `providers/GeminiLiveCodec.kt`: áudio, imagens, transcrições e ferramentas estruturadas.
+
+O adaptador usa `propose_plan` e `report_assessment`; não interpreta frases livres
+como autorização para avançar. O aplicativo revisa localmente os eventos. Não há
+chave de API embutida no APK nem gravação de mídia ou conversas em disco pelo app.
+
+## Testes sem Android e sem credenciais
 
 ```bash
+cd android
 ./gradlew -p jvm-tests :mode-software:test
 ```
 
-No Windows, substitua `./gradlew` por `gradlew.bat`.
+Incluem progresso, avaliações antigas, PCM, ferramentas inválidas, interrupção,
+handshake WebSocket e erro de autenticação com servidor local simulado. Não fazem
+chamadas à API real nem comprovam qualidade CAD, latência ou roteamento nos óculos.
 
-## Próximas implementações da equipe software
+## Testar no celular
 
-1. Implementar `SoftwareTutorProvider` para o provedor escolhido. SDKs de nuvem
-   JVM podem ficar em um subpacote `providers` aqui. Runtimes que dependem de
-   Android devem ficar em um módulo adaptador Android separado, dependente deste.
-2. Coletar `session.events` antes de enviar entradas; conectar áudio incremental
-   à reprodução no celular/óculos e interromper/limpar a reprodução local junto
-   de `SoftwareTutorInput.Interrupt`.
-3. Conectar entrada PCM dos óculos; não reutilizar o parser de três comandos do
-   hardware como reconhecedor de conversa livre.
-4. Revisar/aceitar `PlanProposed`, manter objetivo atual e histórico na aplicação.
-   Uma `Assessment` é evidência; não avança etapas automaticamente.
-5. Conectar `GlassesFrameSource` na composição do app quando Meta DAT estiver
-   implementado; nos testes usar `FrameSource` falso como no teste de sessão.
-6. Medir latência e qualidade antes de escolher entre inferência local e nuvem.
+Veja [o roteiro de teste](../../docs/modo-software-primeiro-fluxo.md), incluindo
+como gerar um token no computador. O modelo padrão é `gemini-3.8-live`, editável
+na tela; disponibilidade depende da conta e do serviço.
 
-O dono da sessão serializa chamadas de entrada/ciclo de vida em uma coroutine;
-a coleta de eventos ocorre concorrentemente. Encerrar a conexão no fim da sessão
-e propagar cancelamento no adaptador. Não persistir bytes de áudio/imagem por padrão.
+## Próximo trabalho
 
-Trabalhe neste módulo sem importar `com.stepwise.vision`, `procedure` ou o
-`SessionController` legado: eles pertencem ao hardware.
+- Validar a sessão real com token e o POCO, incluindo áudio e interrupções.
+- Conectar captura e microfone dos óculos quando a integração compartilhada estiver
+  pronta. A imagem usa `GlassesFrameSource`; o microfone Android atual é um fallback.
+- Medir latência/qualidade e testar um provedor local com os mesmos contratos.
+- Implementar renovação/retomada de sessões, persistência de progresso e métricas.
+
+Não importar o motor físico nem seus detectores. Adaptadores que dependem de
+Android pertencem a `software-android`, preservando os testes JVM independentes.

@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "stepwise"
 include(":app", ":core", ":platform-android", ":mode-hardware", ":mode-software")
+include(":software-android")

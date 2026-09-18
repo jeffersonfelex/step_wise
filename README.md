@@ -11,9 +11,10 @@ Dois modos podem evoluir de forma independente:
 
 A base foi separada em módulos. O hardware preserva o código existente de
 motor procedural, detectores e checkpoints, ainda com integrações pendentes.
-O software tem contratos de provedor multimodal, sessão e testes com entradas
-simuladas. Nenhuma LLM, captura DAT real ou conversa de áudio foi conectada por
-esta reorganização. A tela companion permite selecionar o modo e mostra seu status.
+O software possui um primeiro fluxo de tutor CAD com adaptador Gemini Live,
+revisão de plano, perguntas por texto/voz e verificação com imagem. A integração
+foi testada com servidor simulado; a sessão real exige token e validação no celular.
+A captura Meta DAT ainda está pendente. Veja o [roteiro de teste](docs/modo-software-primeiro-fluxo.md).
 
 ## Onde cada equipe trabalha
 
@@ -21,6 +22,7 @@ esta reorganização. A tela companion permite selecionar o modo e mostra seu st
 |---|---|
 | [`android/mode-software/`](android/mode-software/README.md) | Tutor CAD, desenho técnico e integração com modelos |
 | [`android/mode-hardware/`](android/mode-hardware/README.md) | Motor físico, detectores, procedimentos, banco e testes |
+| `android/software-android/` | Interface CAD, seleção de imagens e áudio em streaming |
 | `android/core/` | Contratos comuns de objetivos, resultados e mídia, sem Android |
 | `android/platform-android/` | Óculos, áudio Android e estado da conexão |
 | `android/app/` | Composição dos módulos e interface companion |
@@ -76,4 +78,4 @@ SDKs para compilar ou testar. Não colocar credenciais de provedores no código.
 
 Esses documentos descrevem o escopo físico original, inclusive partes planejadas.
 A política de processamento local do hardware não deve ser apresentada como uma
-promessa do futuro modo software conectado à nuvem.
+promessa do modo software conectado à nuvem. O [fluxo de dados do tutor CAD](docs/modo-software-primeiro-fluxo.md#dados-e-ciclo-de-vida) é separado.
