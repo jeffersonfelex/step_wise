@@ -1,5 +1,7 @@
 package com.stepwise.session
 
+import android.util.Log
+import com.stepwise.ai.LlamaStepEvaluator
 import com.stepwise.audio.TtsManager
 import com.stepwise.audio.VoiceInputManager
 import com.stepwise.engine.AssistanceLevel
@@ -11,6 +13,11 @@ import com.stepwise.procedure.Procedure
 import com.stepwise.procedure.ProcedureLoader
 import com.stepwise.resilience.LinkStateManager
 import com.stepwise.vision.VisualDetector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Controlador de sessão (CTRL no diagrama de arquitetura).
@@ -30,21 +37,34 @@ class SessionController(
     private val voiceInputManager: VoiceInputManager,
     private val ttsManager: TtsManager,
     private val procedureLoader: ProcedureLoader,
-    private val linkStateManager: LinkStateManager
+    private val linkStateManager: LinkStateManager,
+    // IA real (critério "Uso de IA"): compara o frame ao vivo com o desenho
+    // técnico de referência via Llama 4 (Groq) — ver LlamaStepEvaluator.
+    // qualityGate/visualDetector seguem no construtor por compatibilidade
+    // (pipeline local antigo, sem IA no caminho crítico), mas VERIFY agora
+    // decide o resultado via llamaStepEvaluator.
+    private val llamaStepEvaluator: LlamaStepEvaluator
 ) {
+
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var verifyJob: Job? = null
 
     /**
      * Carrega o procedimento ativo (ex.: "montagem_engrenagens"), restaura
      * estado e abre a rota de áudio (HFP) para toda a sessão — ver
      * VoiceInputManager.startSession().
+     *
+     * TODO: restaurar checkpoint real via Room (SessionStateDao.latestCheckpoint)
+     * em vez de sempre começar do zero (resumeStepIndex/resumeLevel default).
      */
     fun startSession(procedureId: String) {
-        // TODO: val procedure = procedureLoader.load(procedureId)
-        // TODO: restaurar checkpoint via Room e chamar proceduralEngine.load(procedure, ...)
+        val procedure = procedureLoader.load(procedureId)
+        proceduralEngine.load(procedure)
         voiceInputManager.startSession()
     }
 
     fun endSession() {
+        verifyJob?.cancel()
         voiceInputManager.stopSession()
         metaDatSessionManager.stopStream()
     }
@@ -60,12 +80,40 @@ class SessionController(
     private fun handleVerify() {
         ttsManager.speak("Verificando") // resposta imediata: evita silêncio num dispositivo sem tela.
 
-        // TODO (coroutine): val frame = metaDatSessionManager.captureBestFrameFromStream()
-        //   ?: return applyAndSpeak(StepResult.INCONCLUSIVE)  // quality gate não achou frame bom o bastante
-        // val usable = frame != null
-        // val detection = visualDetector.detect(frame)
-        // val result = proceduralEngine.evaluate(detection, imageUsable = usable)
-        // applyAndSpeak(result)
+        if (verifyJob?.isActive == true) return // uma verificação por vez.
+        verifyJob = scope.launch {
+            // Uso de IA real: o frame ao vivo é comparado com o desenho técnico
+            // de referência por um modelo Llama 4 com visão (ver LlamaStepEvaluator/
+            // LlamaVisionClient) — a entrada externa (imagem) muda a saída
+            // (CORRECT/KNOWN_ERROR/INCONCLUSIVE + feedback falado).
+            val evaluation = try {
+                val frame = metaDatSessionManager.captureBestFrameFromStream()
+                val step = proceduralEngine.currentStep()
+                when {
+                    frame == null -> null // quality gate não achou frame bom o bastante
+                    step == null -> null // procedimento já concluído / nada carregado
+                    else -> llamaStepEvaluator.evaluate(frame, step)
+                }
+            } catch (e: NotImplementedError) {
+                // Integração real com o Meta DAT (stream de câmera) ainda pendente
+                // neste checkout — ver MetaDatSessionManager. Tratar como
+                // INCONCLUSIVE em vez de deixar a sessão travar/crashar.
+                Log.w(TAG, "Captura Meta DAT ainda não integrada; tratando como INCONCLUSIVE.", e)
+                null
+            }
+
+            if (evaluation == null) {
+                applyAndSpeak(StepResult.INCONCLUSIVE)
+            } else {
+                Log.i(
+                    TAG,
+                    "IA (${evaluation.modelUsed}): ${evaluation.result} " +
+                        "confiança=${evaluation.confidence} latência=${evaluation.latencyMs}ms"
+                )
+                proceduralEngine.applyResult(evaluation.result)
+                ttsManager.speak(evaluation.feedback)
+            }
+        }
     }
 
     private fun applyAndSpeak(result: StepResult) {
@@ -122,5 +170,9 @@ class SessionController(
      */
     fun forceDemoResult(result: StepResult) {
         applyAndSpeak(result)
+    }
+
+    private companion object {
+        const val TAG = "SessionController"
     }
 }

@@ -1,3 +1,21 @@
 <resources>
-    <style name="Theme.StepWise" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.StepWise" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent_hardware</item>
+        <item name="colorOnSecondary">@color/bg_base</item>
+        <item name="colorSurface">@color/bg_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/bg_surface_alt</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOutline">@color/outline</item>
+        <item name="android:colorBackground">@color/bg_base</item>
+        <item name="android:windowBackground">@color/bg_base</item>
+        <item name="android:statusBarColor">@color/bg_base</item>
+        <item name="android:navigationBarColor">@color/bg_base</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="materialButtonStyle">@style/Widget.StepWise.Button.Filled</item>
+        <item name="materialCardViewStyle">@style/Widget.StepWise.Card</item>
+    </style>
 </resources>

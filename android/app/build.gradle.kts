@@ -5,11 +5,11 @@ plugins {
 
 android {
     namespace = "com.stepwise"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.stepwise"
-        minSdk = 26
+        applicationId = "com.stepwise.digital"
+        minSdk = 31 // exigido pelo Meta Wearables DAT (mwdat-core/mwdat-camera)
         targetSdk = 34
         versionCode = 1
         versionName = "0.1.0-mvp"

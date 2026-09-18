@@ -31,3 +31,21 @@ ml/data/*
 .DS_Store
 Thumbs.db
 *.log
+
+# Node (npm acidental na raiz)
+node_modules/
+package.json
+package-lock.json
+
+# IDEs
+.idea/
+.vscode/
+
+# Build output do Eclipse/Buildship nos módulos Gradle
+android/**/bin/
+
+# Modelo Vosk (baixado por scripts/download_vosk_model.sh ou tarefa downloadVoskModel)
+android/platform-android/src/main/assets/model/
+
+# Saídas auxiliares do Claude
+Claude outputs/

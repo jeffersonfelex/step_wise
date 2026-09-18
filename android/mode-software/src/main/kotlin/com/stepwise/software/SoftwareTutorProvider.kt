@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 data class CadTask(
     val drawing: ImageFrame,
     val objective: String,
-    val applicationName: String = "Fusion 360",
+    val applicationName: String = "Tinkercad",
 ) {
     init {
         require(objective.isNotBlank())

@@ -80,9 +80,24 @@ class ProceduralEngine(
 
     fun currentStepIndex(): Int = currentStepIndex
 
+    /** Etapa atual do procedimento carregado, ou null se já concluiu ou nada foi carregado. */
+    fun currentStep() = procedure?.steps?.getOrNull(currentStepIndex)
+
+    /**
+     * Instrução falada para a etapa/nível atuais (lida do Procedure
+     * carregado via ProcedureLoader). Pedir ajuda (HELP) zera o streak de
+     * acertos consecutivos, como qualquer pedido de ajuda faz na política
+     * de fading — repetir (REPEAT) não zera, é só reler a última instrução.
+     */
     fun currentInstruction(helpRequested: Boolean = false, repeat: Boolean = false): String {
-        // TODO: buscar instructions[currentLevel] da etapa atual em Procedure.
         if (helpRequested) consecutiveCorrectStreak = 0
-        return "TODO: instrução da etapa $currentStepIndex no nível $currentLevel"
+
+        val proc = procedure ?: return "Nenhum procedimento carregado."
+        val step = proc.steps.getOrNull(currentStepIndex)
+            ?: return "Procedimento concluído. Parabéns!"
+
+        return step.instructionsByLevel[currentLevel.name]
+            ?: step.instructionsByLevel.values.firstOrNull()
+            ?: "Instrução indisponível para a etapa ${step.stepId}."
     }
 }

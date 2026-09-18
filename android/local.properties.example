@@ -1,3 +1,19 @@
 ## Copie este arquivo para local.properties (NÃO versionado) e ajuste o
 ## caminho para o seu Android SDK.
 sdk.dir=/caminho/para/Android/sdk
+
+## Chave da API Groq (https://console.groq.com/keys) usada por
+## com.stepwise.ai.LlamaVisionClient para chamar os modelos Llama 4
+## Scout/Maverick (com visão) — critério "Uso de IA" do hackathon.
+## NUNCA commitar uma chave real aqui; deixe vazio se ainda não tiver uma
+## (o app trata a ausência como INCONCLUSIVE, não quebra o build).
+## Alternativa: variável de ambiente GROQ_API_KEY (útil em CI).
+groq.api.key=
+
+## Token classico do GitHub (https://github.com/settings/tokens, escopo
+## read:packages) para baixar o Meta Wearables Device Access Toolkit
+## (com.meta.wearable:mwdat-*) via GitHub Packages - necessario mesmo
+## sendo o repositorio publico. NUNCA commitar um token real aqui.
+## Alternativa: variavel de ambiente GITHUB_TOKEN.
+github_token=
+github_username=

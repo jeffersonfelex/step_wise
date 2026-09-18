@@ -1,10 +1,63 @@
 <resources>
-    <string name="app_name">StepWise</string>
+    <string name="app_name">Step Wise Digital</string>
+    <string name="app_tagline">Tutor adaptativo com IA para montagem física e modelagem 3D</string>
     <string name="select_mode">Escolha o modo de tutoria</string>
     <string name="mode_hardware">Hardware — montagem física</string>
+    <string name="mode_hardware_desc">Monte peças físicas com verificação por câmera e voz, direto nos óculos.</string>
     <string name="mode_software">Software — modelagem CAD</string>
+    <string name="mode_software_desc">Importe um desenho técnico e receba o passo a passo de modelagem, narrado por voz.</string>
     <string name="hardware_status">Modo hardware selecionado. Tutoria de montagem física com imagens dos óculos. Integração da sessão ainda em desenvolvimento.</string>
-    <string name="software_status">Modo software selecionado. Tutoria de CAD por imagem e voz dos óculos. Conexão com o tutor de IA ainda em desenvolvimento.</string>
+    <string name="software_status">Modo software selecionado. Tutoria de CAD: importe um desenho técnico e a IA gera o passo a passo, narrado por voz.</string>
     <string name="select_procedure">Selecionar procedimento</string>
     <string name="verify_fallback">Verificar</string>
+    <string name="help_fallback">Ajuda</string>
+    <string name="repeat_fallback">Repetir</string>
+    <string name="start_hardware_session">Iniciar sessão de montagem</string>
+    <string name="start_software_session">Iniciar sessão de CAD</string>
+
+    <!-- HardwareSessionActivity -->
+    <string name="hardware_session_title">Sessão de montagem</string>
+    <string name="hardware_voice_fallback_label">Comandos (fallback de UI — o principal é por voz)</string>
+    <string name="hardware_demo_label">Modo demonstração (pitch)</string>
+    <string name="hardware_demo_hint">Use estes botões para simular resultados na demonstração, sem depender da câmera dos óculos.</string>
+    <string name="hardware_demo_enable">Ativar modo demonstração</string>
+    <string name="hardware_demo_force_correct">Forçar: correto</string>
+    <string name="hardware_demo_force_error">Forçar: erro conhecido</string>
+    <string name="hardware_demo_force_inconclusive">Forçar: inconclusivo</string>
+    <string name="hardware_permissions_denied">Permissões de microfone/câmera/Bluetooth negadas — sem elas a sessão não consegue ouvir comandos de voz nem verificar a montagem.</string>
+    <string name="hardware_status_format">Etapa %1$d · Nível %2$s\n%3$s</string>
+    <string name="hardware_battery_format">Bateria do celular: %1$s%% (óculos: leia manualmente no app Meta AI)</string>
+    <string name="hardware_battery_unknown">indisponível</string>
+
+    <!-- SoftwareSessionActivity -->
+    <string name="software_session_title">Sessão de modelagem CAD</string>
+    <string name="software_drawing_section_label">Desenho técnico</string>
+    <string name="software_pick_drawing">Selecionar desenho técnico</string>
+    <string name="software_drawing_preview_desc">Pré-visualização do desenho técnico selecionado</string>
+    <string name="software_drawing_selected">Desenho selecionado. Descreva o objetivo (opcional) e gere o passo a passo.</string>
+    <string name="software_drawing_decode_error">Não consegui ler essa imagem. Tente outra.</string>
+    <string name="software_objective_hint">O que você quer modelar? (opcional)</string>
+    <string name="software_default_objective">Modelar a peça mostrada no desenho técnico</string>
+    <string name="software_generate_plan">Gerar passo a passo</string>
+    <string name="software_generating_plan">Gerando o passo a passo com a IA…</string>
+    <string name="software_generic_error">Não consegui gerar o passo a passo agora. Tente de novo.</string>
+    <string name="software_no_plan_yet">Ainda não há um passo a passo gerado. Selecione um desenho primeiro.</string>
+    <string name="software_plan_finished">Você concluiu todos os passos. Parabéns!</string>
+    <string name="software_step_format">Passo %1$d de %2$d: %3$s</string>
+    <string name="software_thinking">Deixa eu pensar…</string>
+    <string name="software_voice_fallback_label">Comandos (fallback de UI — diga \"verificar\" para avançar, \"ajuda\" ou \"repetir\")</string>
+    <string name="software_verify_fallback">Verificar (próximo)</string>
+    <string name="software_permissions_denied">Permissão de microfone/Bluetooth negada — comandos por voz indisponíveis; use os botões abaixo.</string>
+
+    <!-- PrivacyActivity (LGPD) -->
+    <string name="privacy_button">Privacidade e meus dados</string>
+    <string name="privacy_title">Privacidade e meus dados</string>
+    <string name="privacy_explanation">Aqui fica só o registro do seu desempenho (etapa, nível de assistência e resultado) — nunca imagens ou áudio, que não são guardados. Você pode apagar esse histórico quando quiser.</string>
+    <string name="privacy_empty">Nenhum registro de desempenho salvo ainda.</string>
+    <string name="privacy_entry_format">%1$s — %2$s, etapa %3$d, nível %4$s, resultado %5$s</string>
+    <string name="privacy_delete_all">Apagar meu histórico</string>
+    <string name="privacy_delete_confirm_title">Apagar todo o histórico?</string>
+    <string name="privacy_delete_confirm_message">Essa ação remove permanentemente todos os registros de desempenho salvos neste aparelho. Não é possível desfazer.</string>
+    <string name="privacy_delete_confirm_positive">Apagar</string>
+    <string name="privacy_delete_confirm_negative">Cancelar</string>
 </resources>

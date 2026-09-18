@@ -1,5 +1,13 @@
 package com.stepwise.audio
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import com.stepwise.session.VoiceCommand
 
 /**
@@ -17,27 +25,113 @@ import com.stepwise.session.VoiceCommand
  *
  * IMPORTANTE: configurar/abrir o HFP *antes* de abrir o stream de câmera
  * do Meta DAT (ver MetaDatSessionManager) — na ordem inversa o áudio pode
- * falhar sem erro.
+ * falhar sem erro. Por isso startSession() só chama keywordSpotter.start()
+ * depois que o Android confirma SCO_AUDIO_STATE_CONNECTED — nunca antes.
+ *
+ * IMPORTANTE (achado em produção, 18/09/2026, hackathon - comandos de voz
+ * "verificar"/"ajuda"/"repetir" não reconhecidos mesmo com os óculos
+ * conectados por Bluetooth): até esta revisão, se SCO_AUDIO_STATE_CONNECTED
+ * nunca chegasse (observado em alguns aparelhos, ex. Xiaomi + Ray-Ban Meta,
+ * mesmo com o Bluetooth "conectado" ao nível do sistema operacional), o
+ * KeywordSpotter nunca era iniciado e nada era mostrado ao aluno — silêncio
+ * total, sem qualquer diagnóstico. Agora [onStatus] repassa qualquer falha
+ * (SCO não conectou a tempo, SCO desconectou, erro de SCO, ou uma falha
+ * vinda do próprio KeywordSpotter — ver KeywordSpotter.onError) para a
+ * Activity mostrar na tela e falar por TTS.
  */
 class VoiceInputManager(
-    private val keywordSpotter: KeywordSpotter = OfflineKeywordSpotter(),
-    private val onCommand: (VoiceCommand) -> Unit
+    private val context: Context,
+    private val keywordSpotter: KeywordSpotter = OfflineKeywordSpotter(context),
+    private val onCommand: (VoiceCommand) -> Unit,
+    private val onStatus: (String) -> Unit = {}
 ) {
 
+    private val audioManager = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var listening = false
+    private var scoReceiver: BroadcastReceiver? = null
+    private var scoConnected = false
+
+    private val scoTimeoutRunnable = Runnable {
+        if (!scoConnected) {
+            Log.e(TAG, "SCO não conectou em ${SCO_TIMEOUT_MS}ms; comandos de voz indisponíveis.")
+            onStatus(
+                "Não consegui conectar o áudio dos óculos para os comandos de voz. " +
+                    "Confira se os óculos estão pareados e conectados por Bluetooth e tente reabrir a sessão; " +
+                    "por enquanto, use os botões na tela."
+            )
+        }
+    }
 
     /** Abre a rota HFP e liga a escuta contínua para toda a sessão de montagem. */
     fun startSession() {
         if (listening) return
-        // TODO: configurar/abrir HFP antes do stream de câmera.
-        keywordSpotter.start(onCommand)
         listening = true
+        scoConnected = false
+        openHfpRoute()
     }
 
     /** Encerra a escuta e libera o canal HFP ao final da sessão. */
     fun stopSession() {
         if (!listening) return
-        keywordSpotter.stop()
         listening = false
+        mainHandler.removeCallbacks(scoTimeoutRunnable)
+        keywordSpotter.stop()
+        closeHfpRoute()
+    }
+
+    private fun openHfpRoute() {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(receiverContext: Context, intent: Intent) {
+                when (intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, AudioManager.SCO_AUDIO_STATE_ERROR)) {
+                    AudioManager.SCO_AUDIO_STATE_CONNECTED -> {
+                        Log.i(TAG, "HFP conectado; iniciando KeywordSpotter.")
+                        scoConnected = true
+                        mainHandler.removeCallbacks(scoTimeoutRunnable)
+                        keywordSpotter.start(onCommand = onCommand, onError = onStatus)
+                    }
+                    AudioManager.SCO_AUDIO_STATE_DISCONNECTED -> {
+                        Log.w(TAG, "HFP desconectado durante a sessão.")
+                        val wasConnected = scoConnected
+                        scoConnected = false
+                        if (listening && wasConnected) {
+                            onStatus("O áudio dos óculos foi desconectado. Comandos de voz indisponíveis; use os botões na tela.")
+                        }
+                        // TODO: reconectar (ver LinkStateManager) se a sessão ainda estiver ativa.
+                    }
+                    AudioManager.SCO_AUDIO_STATE_ERROR -> {
+                        Log.e(TAG, "Erro ao abrir a rota SCO (HFP). Voz indisponível nesta sessão.")
+                        onStatus("Não consegui abrir o áudio dos óculos. Comandos de voz indisponíveis; use os botões na tela.")
+                    }
+                }
+            }
+        }
+        scoReceiver = receiver
+        context.registerReceiver(receiver, IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED))
+
+        // Ordem importa: modo de comunicação + startBluetoothSco() ANTES de
+        // qualquer stream de câmera (ver MetaDatSessionManager).
+        audioManager.mode = AudioManager.MODE_IN_COMMUNICATION
+        audioManager.isBluetoothScoOn = true
+        audioManager.startBluetoothSco()
+
+        // Achado em produção (18/09/2026): em alguns aparelhos o
+        // SCO_AUDIO_STATE_CONNECTED pode nunca chegar mesmo com o
+        // Bluetooth "conectado" no nível do SO — sem este timeout o app
+        // ficava esperando para sempre, sem qualquer aviso ao aluno.
+        mainHandler.postDelayed(scoTimeoutRunnable, SCO_TIMEOUT_MS)
+    }
+
+    private fun closeHfpRoute() {
+        audioManager.isBluetoothScoOn = false
+        audioManager.stopBluetoothSco()
+        audioManager.mode = AudioManager.MODE_NORMAL
+        scoReceiver?.let { runCatching { context.unregisterReceiver(it) } }
+        scoReceiver = null
+    }
+
+    companion object {
+        private const val TAG = "VoiceInputManager"
+        private const val SCO_TIMEOUT_MS = 6_000L
     }
 }
