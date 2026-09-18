@@ -22,7 +22,7 @@ def main() -> None:
     os.makedirs(args.output_dir, exist_ok=True)
 
     # TODO: converter/exportar para .tflite e copiar para
-    # android/app/src/main/assets/models/detector.tflite
+    # android/mode-hardware/src/main/assets/models/detector.tflite
 
     print(f"[export_litert] modelo: {args.model_dir} -> LiteRT em: {args.output_dir}")
 

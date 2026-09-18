@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">StepWise</string>
+    <string name="select_mode">Escolha o modo de tutoria</string>
+    <string name="mode_hardware">Hardware — montagem física</string>
+    <string name="mode_software">Software — modelagem CAD</string>
+    <string name="hardware_status">Modo hardware selecionado. Tutoria de montagem física com imagens dos óculos. Integração da sessão ainda em desenvolvimento.</string>
+    <string name="software_status">Modo software selecionado. Tutoria de CAD por imagem e voz dos óculos. Conexão com o tutor de IA ainda em desenvolvimento.</string>
     <string name="select_procedure">Selecionar procedimento</string>
     <string name="verify_fallback">Verificar</string>
 </resources>

@@ -6,7 +6,8 @@ import android.speech.tts.TextToSpeech
 /**
  * Saída de áudio (TTS no diagrama): Android TextToSpeech roteado por
  * Bluetooth para os alto-falantes open-ear dos Ray-Ban Meta.
- * Frases curtas por design — nunca geradas por LLM no caminho crítico.
+ * Compartilhado pelos modos; pode falar instruções prontas ou texto do tutor.
+ * Áudio nativo em streaming de um provedor precisa de uma saída PCM separada.
  */
 class TtsManager(context: Context) {
 

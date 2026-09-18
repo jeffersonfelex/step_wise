@@ -4,12 +4,12 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.CAMERA" /> <!-- controle via Meta DAT -->
-    <uses-permission android:name="android.permission.INTERNET" /> <!-- telemetria opcional, fora do caminho crítico -->
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- reservado para adaptadores de IA; nenhum configurado -->
 
     <application
         android:name=".StepWiseApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher"
         android:label="StepWise"
         android:theme="@style/Theme.StepWise"
         android:supportsRtl="true">

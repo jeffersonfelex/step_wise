@@ -36,7 +36,8 @@ class MetaDatSessionManager(
     /**
      * Abre (ou reaproveita, se já aberto) o stream de câmera, acumula os
      * frames da janela recente e retorna o melhor frame utilizável
-     * segundo o QualityGate. Retorna null se nenhum frame do lote passar
+     * segundo o QualityGate, codificado em JPEG (contrato de GlassesFrameSource).
+     * Retorna null se nenhum frame do lote passar
      * no limiar mínimo (tratar como INCONCLUSIVE no motor procedural).
      *
      * IMPORTANTE: configurar/abrir o HFP *antes* de abrir o stream de

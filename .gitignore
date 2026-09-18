@@ -5,6 +5,7 @@
 # Android / Gradle
 android/local.properties
 android/.gradle/
+android/**/.gradle/
 android/**/build/
 android/*.iml
 android/.idea/

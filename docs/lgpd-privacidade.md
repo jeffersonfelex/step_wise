@@ -1,4 +1,7 @@
-# Privacidade e Dados — StepWise
+# Privacidade e Dados — StepWise (modo hardware)
+
+> Documento do escopo físico original; não descreve o futuro tutor CAD nem
+> provedores remotos. Há fluxos planejados aqui que ainda estão pendentes no código.
 
 *(1 página — preparada para a demonstração de 18/09; checkpoint obrigatório de privacidade do Edital §8.1.)*
 
@@ -64,4 +67,4 @@ private fun handleVerify() {
 }
 ```
 
-Código completo em `android/app/src/main/java/com/stepwise/session/SessionController.kt`.
+Código completo em `android/mode-hardware/src/main/kotlin/com/stepwise/session/SessionController.kt`.

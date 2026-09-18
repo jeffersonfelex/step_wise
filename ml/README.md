@@ -6,7 +6,9 @@ Android via MediaPipe Tasks / LiteRT.
 
 Não faz parte do caminho crítico do app: roda no computador de
 desenvolvimento, gera um modelo `.tflite`, que é copiado para
-`android/app/src/main/assets/models/` antes do build.
+`android/mode-hardware/src/main/assets/models/` antes do build.
+Este pipeline pertence ao modo hardware; o modo software usa modelos
+pré-treinados por adaptadores independentes e não depende deste diretório.
 
 ## Setup
 
