@@ -21,11 +21,23 @@ class ProceduralEngine(
     private var currentLevel: AssistanceLevel = AssistanceLevel.L4
     private var consecutiveCorrectStreak: Int = 0
 
-    fun load(procedure: Procedure, resumeStepIndex: Int = 0, resumeLevel: AssistanceLevel = AssistanceLevel.L4) {
+    /**
+     * @param resumeStreak permite retomar já com N acertos consecutivos
+     * registrados. Usado tanto na restauração real de checkpoint (Room)
+     * quanto no modo demonstração (ver SessionController.enableDemoMode),
+     * para mostrar a transição de fading (ex.: L3 -> L2) em poucos
+     * minutos de pitch em vez de exigir duas execuções corretas do zero.
+     */
+    fun load(
+        procedure: Procedure,
+        resumeStepIndex: Int = 0,
+        resumeLevel: AssistanceLevel = AssistanceLevel.L4,
+        resumeStreak: Int = 0
+    ) {
         this.procedure = procedure
         this.currentStepIndex = resumeStepIndex
         this.currentLevel = resumeLevel
-        this.consecutiveCorrectStreak = 0
+        this.consecutiveCorrectStreak = resumeStreak
     }
 
     /** Confronta as detecções com as regras explícitas da etapa atual. */
@@ -39,7 +51,12 @@ class ProceduralEngine(
         return StepResult.INCONCLUSIVE
     }
 
-    /** Aplica o resultado: avança etapa e/ou reduz nível conforme a política de fading. */
+    /**
+     * Aplica o resultado: avança etapa e/ou reduz nível conforme a
+     * política de fading. Também usado diretamente pelo modo demonstração
+     * para forçar um KNOWN_ERROR ou INCONCLUSIVE roteirizado no pitch,
+     * sem depender da detecção visual real.
+     */
     fun applyResult(result: StepResult) {
         when (result) {
             StepResult.CORRECT -> {
@@ -58,6 +75,10 @@ class ProceduralEngine(
             }
         }
     }
+
+    fun currentLevel(): AssistanceLevel = currentLevel
+
+    fun currentStepIndex(): Int = currentStepIndex
 
     fun currentInstruction(helpRequested: Boolean = false, repeat: Boolean = false): String {
         // TODO: buscar instructions[currentLevel] da etapa atual em Procedure.
