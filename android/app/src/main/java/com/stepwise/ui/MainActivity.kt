@@ -6,14 +6,19 @@ import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.stepwise.R
 import com.stepwise.core.TutorMode
+import com.stepwise.glasses.MetaWearables
 import com.stepwise.hardware.HardwareMode
 import com.stepwise.hardware.HardwareTutorActivity
 import com.stepwise.software.SoftwareMode
 import com.stepwise.software.android.CadTutorActivity
+import kotlinx.coroutines.launch
 
 /**
  * Composition shell. Mode-specific workflows belong in their modules.
@@ -24,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var startSessionButton: MaterialButton
     private lateinit var alternativeButton: MaterialButton
+    private lateinit var glassesButton: MaterialButton
     private lateinit var hardwareCard: MaterialCardView
     private lateinit var softwareCard: MaterialCardView
 
@@ -103,6 +109,26 @@ class MainActivity : AppCompatActivity() {
         )
         setLinearMargins(ctx, alternativeButton, top = 12)
         column.addView(alternativeButton)
+
+        // Autorização única no app Meta AI: sem ela, nenhum modo consegue capturar pelos óculos.
+        glassesButton = buildSecondaryButton(ctx, getString(R.string.glasses_register)) {
+            if (!MetaWearables.startRegistration(this)) {
+                status.text = getString(R.string.glasses_register_unavailable)
+            }
+        }
+        glassesButton.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        setLinearMargins(ctx, glassesButton, top = 12)
+        column.addView(glassesButton)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                MetaWearables.isRegistered.collect { registered ->
+                    glassesButton.text = getString(if (registered) R.string.glasses_registered else R.string.glasses_register)
+                    glassesButton.isEnabled = !registered
+                }
+            }
+        }
 
         val privacyButton = buildSecondaryButton(ctx, getString(R.string.privacy_button)) {
             startActivity(Intent(ctx, PrivacyActivity::class.java))

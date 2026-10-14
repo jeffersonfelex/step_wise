@@ -2,6 +2,7 @@ package com.stepwise.audio
 
 import android.content.Context
 import android.util.Log
+import kotlin.coroutines.resume
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,7 +51,7 @@ object VoskModelProvider {
                     ASSET_MODEL_DIR,
                     UNPACKED_MODEL_DIR,
                     { model: Model ->
-                        if (cont.isActive) cont.resume(model, onCancellation = null)
+                        if (cont.isActive) cont.resume(model)
                     },
                     { exception: java.io.IOException ->
                         Log.e(
@@ -60,7 +61,7 @@ object VoskModelProvider {
                                 "./gradlew :platform-android:downloadVoskModel antes do build).",
                             exception
                         )
-                        if (cont.isActive) cont.resume(null, onCancellation = null)
+                        if (cont.isActive) cont.resume(null)
                     }
                 )
             }

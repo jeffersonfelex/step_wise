@@ -3,6 +3,7 @@ package com.stepwise
 import android.app.Application
 import com.stepwise.audio.VoskModelProvider
 import com.stepwise.data.db.AppDatabase
+import com.stepwise.glasses.MetaWearables
 
 /**
  * Ponto de entrada do processo Android. Inicializa dependências globais
@@ -23,5 +24,8 @@ class StepWiseApplication : Application() {
         // embutido no APK (assets/model) — ver scripts/download_vosk_model.sh
         // ou a tarefa Gradle downloadVoskModel; nunca é baixado em runtime.
         VoskModelProvider.preload(this)
+
+        // O SDK Meta DAT exige inicialização antes de qualquer sessão com os óculos.
+        MetaWearables.initialize(this)
     }
 }

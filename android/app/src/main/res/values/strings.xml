@@ -16,6 +16,9 @@
     <string name="start_software_session">Iniciar sessão de CAD</string>
     <string name="open_hardware_guide">Abrir guia manual (sem óculos)</string>
     <string name="open_cad_live_tutor">Abrir tutor conversacional (Gemini Live)</string>
+    <string name="glasses_register">Conectar óculos (autorizar no Meta AI)</string>
+    <string name="glasses_registered">Óculos autorizados no Meta AI</string>
+    <string name="glasses_register_unavailable">Não foi possível abrir o Meta AI. Instale o app Meta AI, pareie os óculos e tente de novo.</string>
 
     <!-- HardwareSessionActivity -->
     <string name="hardware_session_title">Sessão de montagem</string>
