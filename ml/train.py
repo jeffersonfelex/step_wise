@@ -90,7 +90,9 @@ def build_model(
     # Com pesos pre-treinados, congela a base: com ~400 imagens, treinar a rede
     # inteira do zero (weights=None, v1) ficou em 16% de acuracia no teste.
     base.trainable = weights is None
-    x = base(x, training=weights is None)
+    # Base congelada roda em modo inferencia (BatchNorm com medias moveis). Sem pesos,
+    # o modo vem do proprio fit/predict: fixar training=True quebraria a inferencia.
+    x = base(x, training=False) if weights is not None else base(x)
     x = tf.keras.layers.GlobalAveragePooling2D(name="pool")(x)
     x = tf.keras.layers.Dropout(0.25, name="dropout")(x)
     outputs = tf.keras.layers.Dense(num_classes, activation="softmax", name="class_scores")(x)

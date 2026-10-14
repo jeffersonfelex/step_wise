@@ -17,6 +17,10 @@ android {
         versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // DAT, Vosk e TFLite trazem .so para 4+ ABIs; o POCO é arm64 e o
+        // emulador x86_64. As demais só aumentavam o APK (~50 MB não usados).
+        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
     buildTypes {

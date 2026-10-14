@@ -51,6 +51,12 @@ class TfliteClassifierDetector(
         )
     }
 
+    /** Carrega o modelo antes do primeiro "verificar", tirando essa espera da resposta ao aluno. */
+    suspend fun warmUp() = withContext(Dispatchers.Default) {
+        synchronized(this@TfliteClassifierDetector) { interpreter ?: load() }
+        Unit
+    }
+
     @Synchronized // Interpreter não é thread-safe.
     private fun classify(bitmap: Bitmap): FloatArray {
         val model = interpreter ?: load()

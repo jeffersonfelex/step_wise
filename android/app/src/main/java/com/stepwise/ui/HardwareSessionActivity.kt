@@ -23,6 +23,7 @@ import com.stepwise.session.SessionController
 import com.stepwise.session.VoiceCommand
 import com.stepwise.vision.TfliteClassifierDetector
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * Sessão do modo hardware (montagem física) — constrói e liga CTRL/ENG/
@@ -54,7 +55,8 @@ class HardwareSessionActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { grants ->
         if (grants.values.all { it }) {
-            sessionController.startSession(PROCEDURE_ID)
+            runCatching { sessionController.startSession(PROCEDURE_ID) }
+                .onFailure { statusView.text = getString(R.string.hardware_procedure_error) }
         } else {
             statusView.text = getString(R.string.hardware_permissions_denied)
         }
@@ -98,6 +100,8 @@ class HardwareSessionActivity : AppCompatActivity() {
         setContentView(buildLayout())
         requestSessionPermissions()
         startBatteryLogging()
+        // Sem modelo (asset ausente) a verificação segue sem o plano A; ver SessionController.
+        lifecycleScope.launch { runCatching { classifier.warmUp() } }
     }
 
     private fun buildLayout(): ScrollView {

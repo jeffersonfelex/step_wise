@@ -27,6 +27,7 @@ import com.stepwise.software.SoftwareTutorInput
 import com.stepwise.software.SoftwareTutorSession
 import com.stepwise.software.android.ImageImport
 import com.stepwise.software.android.providers.LlamaCadTutorProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,7 +84,7 @@ class SoftwareSessionActivity : AppCompatActivity() {
         ttsManager = TtsManager(this)
         voiceInputManager = VoiceInputManager(
             context = this,
-            onCommand = { command -> runOnUiThread { onVoiceCommand(command) } },
+            onCommand = { command -> onVoiceCommand(command) }, // já chega na thread principal
             onStatus = { message ->
                 runOnUiThread {
                     statusView.text = message
@@ -180,14 +181,18 @@ class SoftwareSessionActivity : AppCompatActivity() {
         pickDrawingButton.isEnabled = false
         lifecycleScope.launch {
             // Leitura limitada, redução e EXIF fora da thread principal (fotos de câmera podem ter 12+ MP).
-            val loaded = runCatching {
+            val loaded = try {
                 withContext(Dispatchers.IO) {
                     val frame = ImageImport.readAsJpeg(contentResolver, uri, ImageSource.IMPORTED_DRAWING)
                     val preview = BitmapFactory.decodeByteArray(frame.bytes, 0, frame.bytes.size,
                         BitmapFactory.Options().apply { inSampleSize = 2 })
                     frame.bytes to preview
                 }
-            }.getOrNull()
+            } catch (e: CancellationException) {
+                throw e // tela fechada: não tocar nas views
+            } catch (e: Exception) {
+                null
+            }
             pickDrawingButton.isEnabled = true
             if (loaded == null) {
                 statusView.text = getString(R.string.software_drawing_decode_error)
@@ -213,6 +218,11 @@ class SoftwareSessionActivity : AppCompatActivity() {
             ?: getString(R.string.software_default_objective)
 
         lifecycleScope.launch {
+            // Um novo plano substitui a sessão anterior: fecha a conexão antiga e seu coletor.
+            session?.let { previous ->
+                session = null
+                runCatching { previous.close() }
+            }
             val drawing = ImageFrame(
                 bytes = jpeg,
                 mimeType = "image/jpeg",

@@ -37,7 +37,10 @@ import com.stepwise.session.VoiceCommand
  * total, sem qualquer diagnóstico. Agora [onStatus] repassa qualquer falha
  * (SCO não conectou a tempo, SCO desconectou, erro de SCO, ou uma falha
  * vinda do próprio KeywordSpotter — ver KeywordSpotter.onError) para a
- * Activity mostrar na tela e falar por TTS.
+ * Activity mostrar na tela e falar por TTS; e, se o SCO não conectar a
+ * tempo, a escuta começa pelo microfone do celular em vez de ficar muda.
+ *
+ * [onCommand] e [onStatus] sempre chegam na thread principal.
  */
 class VoiceInputManager(
     private val context: Context,
@@ -53,14 +56,24 @@ class VoiceInputManager(
     private var scoConnected = false
 
     private val scoTimeoutRunnable = Runnable {
-        if (!scoConnected) {
-            Log.e(TAG, "SCO não conectou em ${SCO_TIMEOUT_MS}ms; comandos de voz indisponíveis.")
-            onStatus(
-                "Não consegui conectar o áudio dos óculos para os comandos de voz. " +
-                    "Confira se os óculos estão pareados e conectados por Bluetooth e tente reabrir a sessão; " +
-                    "por enquanto, use os botões na tela."
+        if (!scoConnected && listening) {
+            Log.e(TAG, "SCO não conectou em ${SCO_TIMEOUT_MS}ms; ouvindo pelo microfone do celular.")
+            notifyStatus(
+                "Não consegui conectar o áudio dos óculos. Os comandos de voz usam o microfone do celular; " +
+                    "confira se os óculos estão pareados e conectados por Bluetooth."
             )
+            startSpotter()
         }
+    }
+
+    // O KeywordSpotter chama de uma thread de background: a UI só recebe na thread principal.
+    private fun startSpotter() = keywordSpotter.start(
+        onCommand = { command -> mainHandler.post { if (listening) onCommand(command) } },
+        onError = { message -> notifyStatus(message) },
+    )
+
+    private fun notifyStatus(message: String) {
+        mainHandler.post { if (listening) onStatus(message) }
     }
 
     /** Abre a rota HFP e liga a escuta contínua para toda a sessão de montagem. */
@@ -88,20 +101,20 @@ class VoiceInputManager(
                         Log.i(TAG, "HFP conectado; iniciando KeywordSpotter.")
                         scoConnected = true
                         mainHandler.removeCallbacks(scoTimeoutRunnable)
-                        keywordSpotter.start(onCommand = onCommand, onError = onStatus)
+                        startSpotter()
                     }
                     AudioManager.SCO_AUDIO_STATE_DISCONNECTED -> {
                         Log.w(TAG, "HFP desconectado durante a sessão.")
                         val wasConnected = scoConnected
                         scoConnected = false
                         if (listening && wasConnected) {
-                            onStatus("O áudio dos óculos foi desconectado. Comandos de voz indisponíveis; use os botões na tela.")
+                            notifyStatus("O áudio dos óculos foi desconectado. Comandos de voz indisponíveis; use os botões na tela.")
                         }
                         // TODO: reconectar (ver LinkStateManager) se a sessão ainda estiver ativa.
                     }
                     AudioManager.SCO_AUDIO_STATE_ERROR -> {
                         Log.e(TAG, "Erro ao abrir a rota SCO (HFP). Voz indisponível nesta sessão.")
-                        onStatus("Não consegui abrir o áudio dos óculos. Comandos de voz indisponíveis; use os botões na tela.")
+                        notifyStatus("Não consegui abrir o áudio dos óculos. Comandos de voz indisponíveis; use os botões na tela.")
                     }
                 }
             }

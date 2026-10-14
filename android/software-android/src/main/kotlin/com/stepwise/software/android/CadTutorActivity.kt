@@ -224,7 +224,10 @@ class CadTutorActivity : AppCompatActivity() {
                 val active = checkNotNull(session)
                 if (localImage == null) {
                     if (!active.verify(current.id, id)) {
-                        progress.cancelVerification(); status.text = "Sem imagem utilizável. Tente outra captura."; return@action
+                        progress.cancelVerification()
+                        status.text = "Sem imagem dos óculos. Confira se estão conectados e autorizados no Meta AI, " +
+                            "ou use uma foto local para testar o tutor."
+                        return@action
                     }
                 } else active.send(SoftwareTutorInput.Verify(localImage, current.id, id))
                 verificationTimeout = lifecycleScope.launch {
@@ -235,9 +238,6 @@ class CadTutorActivity : AppCompatActivity() {
                         render()
                     }
                 }
-            } catch (_: NotImplementedError) {
-                progress.cancelVerification()
-                status.text = "Captura dos óculos ainda não conectada. Use uma foto local para testar o tutor."
             } catch (cancelled: CancellationException) {
                 progress.cancelVerification(); throw cancelled
             } catch (_: Exception) {

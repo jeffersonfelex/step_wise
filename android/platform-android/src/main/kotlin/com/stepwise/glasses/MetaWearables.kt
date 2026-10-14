@@ -22,11 +22,15 @@ object MetaWearables {
 
     /** Chamar em Application.onCreate. Idempotente; falhas ficam no log e a captura devolve null. */
     fun initialize(context: Context) {
-        Wearables.initialize(context.applicationContext).onFailure { error, _ ->
-            if (error != WearablesError.ALREADY_INITIALIZED) {
-                Log.w(TAG, "Meta DAT não inicializado: ${error.description}")
+        // Roda em Application.onCreate: uma exceção do SDK não pode impedir o app
+        // de abrir (o guia manual e o modo software funcionam sem óculos).
+        runCatching {
+            Wearables.initialize(context.applicationContext).onFailure { error, _ ->
+                if (error != WearablesError.ALREADY_INITIALIZED) {
+                    Log.w(TAG, "Meta DAT não inicializado: ${error.description}")
+                }
             }
-        }
+        }.onFailure { Log.w(TAG, "Meta DAT lançou exceção ao inicializar.", it) }
     }
 
     /** true quando o usuário já autorizou o StepWise no Meta AI (tipos do SDK ficam neste módulo). */

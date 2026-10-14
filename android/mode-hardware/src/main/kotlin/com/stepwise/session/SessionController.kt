@@ -66,6 +66,7 @@ class SessionController(
     fun startSession(procedureId: String) {
         val procedure = procedureLoader.load(procedureId)
         proceduralEngine.load(procedure)
+        helpRequestedOnStep = false
         voiceInputManager.startSession()
         startJob = scope.launch {
             val checkpoint = sessionStateDao?.let { dao ->
@@ -85,9 +86,15 @@ class SessionController(
 
     fun endSession() {
         startJob?.cancel()
-        verifyJob?.cancel()
         voiceInputManager.stopSession()
-        metaDatSessionManager.stopStream()
+        val capturing = verifyJob?.takeIf { it.isActive }
+        if (capturing != null) {
+            // A captura roda em outra thread: o finally dela fecha a câmera depois que
+            // ela parar. Fechar daqui competiria com um addCamera ainda em curso.
+            capturing.cancel()
+        } else {
+            metaDatSessionManager.stopStream()
+        }
     }
 
     /** Pode ser chamado de qualquer thread (o KeywordSpotter entrega comandos em background). */
@@ -198,6 +205,7 @@ class SessionController(
         val level = AssistanceLevel.entries.firstOrNull { it.name == checkpoint.assistanceLevel } ?: AssistanceLevel.L4
         // Procedimento já concluído: recomeça, mas mantém o nível de assistência conquistado.
         proceduralEngine.load(procedure, resumeStepIndex = if (next >= procedure.steps.size) 0 else next, resumeLevel = level)
+        helpRequestedOnStep = false
     }
 
     private fun speak(text: String) {
@@ -239,6 +247,7 @@ class SessionController(
             resumeLevel = demoLevel,
             resumeStreak = 1 // falta só mais 1 acerto para cair de nível
         )
+        helpRequestedOnStep = false
         speak(proceduralEngine.currentInstruction())
     }
 

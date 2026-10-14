@@ -3,11 +3,11 @@ package com.stepwise.software.android
 import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Matrix
 import android.media.ExifInterface
 import android.net.Uri
 import com.stepwise.core.ImageFrame
 import com.stepwise.core.ImageSource
+import com.stepwise.media.ExifOrientation
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
@@ -44,17 +44,7 @@ object ImageImport {
             ExifInterface(ByteArrayInputStream(bytes))
                 .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
         }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
-        val matrix = Matrix().apply {
-            when (orientation) {
-                2 -> setScale(-1f, 1f)
-                3 -> setRotate(180f)
-                4 -> setScale(1f, -1f)
-                5 -> { setRotate(90f); postScale(-1f, 1f) }
-                6 -> setRotate(90f)
-                7 -> { setRotate(-90f); postScale(-1f, 1f) }
-                8 -> setRotate(-90f)
-            }
-        }
+        val matrix = ExifOrientation.matrix(orientation)
         val oriented = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
         val encoded = try {
             ByteArrayOutputStream().use {

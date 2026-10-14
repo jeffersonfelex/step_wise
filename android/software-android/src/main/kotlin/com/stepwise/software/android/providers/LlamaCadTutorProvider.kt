@@ -56,7 +56,9 @@ private class LlamaCadTutorConnection(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val eventChannel = Channel<SoftwareTutorEvent>(Channel.BUFFERED)
-    private var activeJob: Job? = null
+    private var planJob: Job? = null
+    // Turno em andamento (pergunta ou verificação): um novo turno ou Interrupt cancela o anterior.
+    @Volatile private var activeJob: Job? = null
 
     @Volatile private var currentPlan: TutoringPlan? = null
 
@@ -65,7 +67,7 @@ private class LlamaCadTutorConnection(
     init {
         // Gera o plano assim que a conexão abre - é a leitura do desenho
         // técnico recebido pelo app (task.drawing), o "passo a passo" pedido.
-        activeJob = scope.launch { proposeInitialPlan() }
+        planJob = scope.launch { proposeInitialPlan() }
     }
 
     override suspend fun send(input: SoftwareTutorInput) {
@@ -117,6 +119,7 @@ private class LlamaCadTutorConnection(
     }
 
     private fun handleText(text: String) {
+        activeJob?.cancel()
         activeJob = scope.launch {
             try {
                 val response = visionClient.chatWithImagesAutoModel(
@@ -137,6 +140,7 @@ private class LlamaCadTutorConnection(
     }
 
     private fun handleVerify(frameJpeg: ByteArray, goalId: String, requestId: String) {
+        activeJob?.cancel()
         activeJob = scope.launch {
             try {
                 val goal = currentPlan?.goals?.find { it.id == goalId }
