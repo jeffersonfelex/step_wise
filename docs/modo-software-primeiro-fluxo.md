@@ -2,7 +2,7 @@
 
 ## Preparar e instalar
 
-Com JDK 17, Android SDK 34 e celular autorizado no ADB:
+Com JDK 17, Android SDK 36 e celular autorizado no ADB:
 
 ```bash
 cd android
@@ -64,9 +64,10 @@ Ao relatar um erro, informe a mensagem e o código exibidos, sem compartilhar to
    inconclusivo não liberam avanço. A conclusão também exige confirmação local.
 8. **Encerrar sessão** libera conexão, microfone e reprodução.
 
-**Verificar pelos óculos** usa o adaptador compartilhado. Hoje ele informa que a
-captura ainda não está implementada; não produz evidência fictícia. Não é necessária
-alteração no tutor para trocar a foto de teste pela captura real quando DAT funcionar.
+**Verificar pelos óculos** usa o adaptador compartilhado, ligado à sessão Meta DAT
+real (compilada contra o SDK 0.9.0, ainda não validada com os óculos). Sem óculos
+conectados, a captura expira e o tutor informa que não há imagem utilizável; não
+produz evidência fictícia. A foto local continua disponível para testes.
 A entrada de áudio atual usa o roteamento escolhido pelo Android, sem garantia de
 microfone/alto-falante dos óculos. Essa rota precisa ser validada no dispositivo.
 

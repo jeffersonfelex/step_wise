@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fronteiras entre módulos
+        run: python scripts/check_module_boundaries.py
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Testes JVM (core, mode-software)
+        working-directory: android
+        run: ./gradlew -p jvm-tests :core:test :mode-software:test
+
+      - name: APK debug, testes unitários e compilação dos testes instrumentados
+        working-directory: android
+        run: ./gradlew assembleDebug testDebugUnitTest :mode-hardware:assembleDebugAndroidTest
+
+      - name: Relatórios de teste
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: android/**/build/reports/tests/
+          if-no-files-found: ignore

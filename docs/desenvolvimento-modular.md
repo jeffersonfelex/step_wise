@@ -21,7 +21,7 @@ flowchart TD
 O módulo software usa os óculos por contratos injetados pelo app; não precisa
 importar Android ou Meta DAT. Isso permite testar seu domínio apenas com JDK 17.
 A integração `GlassesFrameSource` adapta o gerenciador DAT ao contrato comum
-`FrameSource`. A captura DAT ainda lança `NotImplementedError` neste checkout.
+`FrameSource`; a captura usa a sessão Meta DAT real, ainda não validada com os óculos.
 
 ## Divisão de trabalho
 
@@ -59,38 +59,53 @@ visuais. Não foram artificialmente generalizados para modelagem CAD.
 # Raiz do repositório: sem dependências extras
 python3 scripts/check_module_boundaries.py
 
-# android/: somente JDK 17 (sem SDK Android ou credenciais)
-./gradlew -p jvm-tests :mode-software:test
+# android/: somente JDK 17+ (sem SDK Android ou credenciais)
+./gradlew -p jvm-tests :core:test :mode-software:test
 
-# android/: JDK 17 + SDK Android 34
-./gradlew :mode-hardware:testDebugUnitTest :platform-android:testDebugUnitTest :app:assembleDebug
+# android/: JDK 17+ e SDK Android 36
+./gradlew assembleDebug testDebugUnitTest :mode-hardware:assembleDebugAndroidTest
 ```
 
-O build `jvm-tests` aponta para os mesmos diretórios dos módulos, sem duplicar
-código. Evitar executar os dois builds Gradle simultaneamente no mesmo checkout,
-pois compartilham as saídas desses módulos. O script de fronteiras confere imports
-entre módulos e dependências Gradle diretas; o compilador é a verificação definitiva.
+O build `jvm-tests` aponta para os mesmos diretórios dos módulos e usa o mesmo
+catálogo `gradle/libs.versions.toml`, sem duplicar código ou versões. Evitar
+executar os dois builds Gradle simultaneamente no mesmo checkout, pois
+compartilham as saídas desses módulos. O script de fronteiras confere imports
+entre módulos, declarações duplicadas em pacotes compartilhados e dependências
+Gradle diretas; o compilador é a verificação definitiva. O CI do GitHub Actions
+roda os três comandos.
 
-## Integração de branches em andamento
+## Integração das branches da final (outubro/2026)
 
-1. Integrar esta mudança estrutural antes de iniciar novas features nos dois modos.
-2. Cada equipe trabalha nos diretórios da tabela; combinar alterações dos contratos.
-3. Preservamos packages Kotlin antigos para reduzir alterações de imports.
-4. Ao integrar commits anteriores à mudança, aplicar os edits nos novos caminhos;
+As branches abertas antes e durante a final foram integradas em `develop`:
+
+| Branch | Como entrou |
+|---|---|
+| `fix/ml-requirements-tensorflow` | Merge direto (já estava na estrutura modular), com os conflitos semânticos corrigidos. |
+| `feature/ajustes-mentoria` | `augment.py` e o fechamento da câmera logo após a captura, aplicados nos novos caminhos. |
+| `prep/final-2026-09-18` | Motor de decisão, procedimento da torneira, classificador v1, pipeline de ML, testes e registros portados para os módulos. Fotos de diagnóstico e o modelo smoke de 11 MB ficaram fora do Git. |
+| `docs/lgpd-privacidade`, `feature/scaffold-inicial` | Já estavam contidas no histórico. |
+
+Regras que continuam valendo para novas branches:
+
+1. Cada equipe trabalha nos diretórios da tabela; combinar alterações dos contratos.
+2. Ao trazer código anterior à reorganização, aplicar os edits nos novos caminhos;
    não recriar `app/src/main/java/com/stepwise/vision`, `engine`, `audio`, etc.
-5. Classes, testes e assets foram movidos juntos. Dependências específicas devem
-   ficar no Gradle do seu módulo, não em `app/build.gradle.kts`.
+3. Dependências específicas ficam no Gradle do módulo e a versão no catálogo,
+   não em `app/build.gradle.kts`.
+4. Não declarar classes no pacote de outro módulo (ex.: `com.stepwise.software`
+   fora do `:mode-software`): o script de fronteiras acusa.
 
-## Estado real após a reorganização
+## Estado real após a integração
 
-A interface software possui seleção de desenho, conexão explícita ao Gemini Live,
-plano revisável, conversa por texto/áudio e verificação com imagem. Os testes usam
-servidor simulado: ainda é necessária validação real no POCO com token temporário.
-O hardware abre um guia manual de engrenagens, com instruções em texto/voz e
-confirmação pelo usuário. A avaliação visual automática e a captura DAT continuam
-com seus TODOs; o guia manual não grava acertos no motor automático.
+Hardware: sessão com voz offline, captura Meta DAT (compilada contra o SDK 0.9.0,
+ainda não validada com os óculos), classificador local, motor determinístico com
+abstenção, checkpoints no Room e avaliação opcional pela Groq. O guia manual
+continua disponível sem óculos.
+
+Software: tutor Gemini Live (testado com servidor simulado; sessão real exige
+token e validação no aparelho) e passo a passo narrado pela Groq.
 Veja o [roteiro do primeiro fluxo](modo-software-primeiro-fluxo.md).
 
-A arquitetura física anterior está em `architecture-stepwise.mmd`. A política
-legada de privacidade é específica do hardware. O fluxo de dados do software
-está documentado no roteiro acima; a política local do hardware não se aplica a ele.
+A arquitetura física anterior está em `architecture-stepwise.mmd`. A
+[política de privacidade](lgpd-privacidade.md) é específica do hardware; o fluxo
+de dados do software está documentado no roteiro acima.

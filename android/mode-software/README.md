@@ -16,6 +16,15 @@ Android SDK e Meta DAT. A interface e áudio Android estão em `../software-andr
 O modelo não opera o Fusion nem mede diretamente sua geometria. A qualidade da
 orientação depende das imagens e do modelo e ainda precisa ser avaliada em bancada.
 
+## Segundo provedor: passo a passo narrado (Groq)
+
+`software-android/.../providers/LlamaCadTutorProvider.kt` implementa o mesmo
+`SoftwareTutorProvider` com um modelo de visão na Groq. A tela `SoftwareSessionActivity`
+(app) gera um plano para Tinkercad a partir do desenho e narra cada passo por TTS,
+com comandos de voz offline ("verificar" avança, "ajuda", "repetir"). Esse fluxo
+avança por comando do aluno, sem verificação por imagem, e só funciona no build
+debug com `groq.api.key` (o release não embute chave).
+
 ## Arquivos principais
 
 - `CadProgress.kt`: plano aceito, etapa atual, correlação de tentativas e avanço manual.
@@ -48,8 +57,9 @@ na tela; disponibilidade depende da conta e do serviço.
 ## Próximo trabalho
 
 - Validar a sessão real com token e o POCO, incluindo áudio e interrupções.
-- Conectar captura e microfone dos óculos quando a integração compartilhada estiver
-  pronta. A imagem usa `GlassesFrameSource`; o microfone Android atual é um fallback.
+- Validar a captura dos óculos no aparelho: `GlassesFrameSource` já usa a sessão
+  Meta DAT real (`MetaDatSessionManager`), compilada mas ainda não testada com os
+  óculos. O microfone Android atual é um fallback.
 - Medir latência/qualidade e testar um provedor local com os mesmos contratos.
 - Implementar renovação/retomada de sessões, persistência de progresso e métricas.
 
