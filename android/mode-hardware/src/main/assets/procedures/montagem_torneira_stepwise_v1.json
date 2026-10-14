@@ -1,0 +1,113 @@
+{
+  "procedure_id": "montagem_torneira_stepwise_v1",
+  "title": "Montagem de Torneira com Conexões",
+  "assistance_levels": ["L4", "L3", "L2", "L1"],
+  "steps": [
+    {
+      "step_id": 1,
+      "name": "Separar e orientar a torneira",
+      "expected_classes": ["S1_torneira"],
+      "instructions": {
+        "L4": "Pegue a torneira principal. Deixe a rosca lateral voltada para a sequência de montagem e mantenha a peça firme sobre a bancada.",
+        "L3": "Pegue a torneira e deixe a rosca lateral pronta para receber a próxima peça.",
+        "L2": "Prepare a torneira.",
+        "L1": "Torneira."
+      },
+      "known_errors": [
+        { "error_id": "E2_peca_invertida", "message": "A torneira ou a peça parecem invertidas. Gire a orientação antes de continuar." },
+        { "error_id": "E4_peca_solta", "message": "Há peça solta na área. Encoste a peça correta na rosca antes de verificar." }
+      ]
+    },
+    {
+      "step_id": 2,
+      "name": "Enroscar P2 na torneira",
+      "expected_classes": ["S2_torneira_P2"],
+      "instructions": {
+        "L4": "Pegue a peça P2 e enrosque na saída lateral da torneira até ficar alinhada e sem folga visível.",
+        "L3": "Enrosque a P2 na saída lateral da torneira.",
+        "L2": "Coloque a P2.",
+        "L1": "P2."
+      },
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A ordem parece incorreta. A próxima peça deve ser a P2." },
+        { "error_id": "E2_peca_invertida", "message": "A P2 parece invertida. Vire a peça e tente enroscar novamente." },
+        { "error_id": "E4_peca_solta", "message": "A P2 ainda parece solta. Enrosque um pouco mais antes de verificar." }
+      ]
+    },
+    {
+      "step_id": 3,
+      "name": "Enroscar P3 no conjunto",
+      "expected_classes": ["S3_torneira_P2_P3"],
+      "instructions": {
+        "L4": "Pegue a peça P3 e conecte depois da P2, mantendo o conjunto reto para não forçar a rosca.",
+        "L3": "Conecte a P3 depois da P2.",
+        "L2": "Coloque a P3.",
+        "L1": "P3."
+      },
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A sequência parece fora de ordem. Depois da P2 vem a P3." },
+        { "error_id": "E3_peca_ausente", "message": "A P3 não aparece conectada. Verifique se ela foi colocada." },
+        { "error_id": "E4_peca_solta", "message": "A peça parece solta. Ajuste a rosca antes de seguir." }
+      ]
+    },
+    {
+      "step_id": 4,
+      "name": "Enroscar P4 no conjunto",
+      "expected_classes": ["S4_torneira_P2_P3_P4"],
+      "instructions": {
+        "L4": "Pegue a peça P4 e enrosque depois da P3. Confira se ela entrou reta, sem cruzar a rosca.",
+        "L3": "Enrosque a P4 depois da P3.",
+        "L2": "Coloque a P4.",
+        "L1": "P4."
+      },
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A peça colocada parece estar fora da ordem. A etapa atual é a P4." },
+        { "error_id": "E2_peca_invertida", "message": "A P4 parece invertida. Vire a peça antes de enroscar." },
+        { "error_id": "E3_peca_ausente", "message": "A P4 não foi identificada no conjunto." }
+      ]
+    },
+    {
+      "step_id": 5,
+      "name": "Enroscar P5 no conjunto",
+      "expected_classes": ["S5_torneira_P2_P3_P4_P5"],
+      "instructions": {
+        "L4": "Pegue a peça P5 e conecte depois da P4. Pare quando ela estiver firme, sem apertar em excesso.",
+        "L3": "Conecte a P5 depois da P4.",
+        "L2": "Coloque a P5.",
+        "L1": "P5."
+      },
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A ordem parece incorreta. Agora a peça esperada é a P5." },
+        { "error_id": "E3_peca_ausente", "message": "A P5 não aparece no conjunto." },
+        { "error_id": "E4_peca_solta", "message": "A peça ainda parece solta. Enrosque até ficar firme." }
+      ]
+    },
+    {
+      "step_id": 6,
+      "name": "Finalizar com P6",
+      "expected_classes": ["S6_final"],
+      "instructions": {
+        "L4": "Pegue a peça P6 e faça a conexão final. Confira visualmente se todas as peças estão na sequência correta.",
+        "L3": "Conecte a P6 e confira o conjunto final.",
+        "L2": "Finalize com a P6.",
+        "L1": "P6."
+      },
+      "known_errors": [
+        { "error_id": "E1_ordem_errada", "message": "A montagem final parece fora da sequência esperada." },
+        { "error_id": "E3_peca_ausente", "message": "Ainda parece faltar uma peça antes de finalizar." },
+        { "error_id": "E4_peca_solta", "message": "Há peça solta. Aperte visualmente o conjunto antes de concluir." }
+      ]
+    }
+  ],
+  "fading_rule": {
+    "description": "Reduz um nível de assistência após execuções corretas repetidas da mesma etapa, sem ajuda e sem erro conhecido.",
+    "consecutive_correct_required": 2,
+    "resets_on": ["KNOWN_ERROR", "HELP_REQUESTED"]
+  },
+  "decision_policy": {
+    "model_status": "technical_pipeline_validated_not_reliable_for_automatic_advance",
+    "minimum_confidence_for_correct": 0.85,
+    "minimum_confidence_for_known_error": 0.85,
+    "fallback_result": "INCONCLUSIVE"
+  }
+}

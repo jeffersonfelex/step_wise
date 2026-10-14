@@ -27,7 +27,7 @@ class PrivacyActivity : AppCompatActivity() {
 
     private lateinit var historyContainer: LinearLayout
     private lateinit var emptyLabel: TextView
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale("pt", "BR"))
+    private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.forLanguageTag("pt-BR"))
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

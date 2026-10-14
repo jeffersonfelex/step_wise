@@ -2,10 +2,6 @@ package com.stepwise.software.android
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -22,8 +18,6 @@ import com.stepwise.glasses.MetaDatSessionManager
 import com.stepwise.software.*
 import com.stepwise.software.providers.GeminiLiveProvider
 import kotlinx.coroutines.*
-import java.io.ByteArrayOutputStream
-import java.io.ByteArrayInputStream
 
 /** Development companion for the CAD tutor. Does not depend on physical assembly code. */
 class CadTutorActivity : AppCompatActivity() {
@@ -285,44 +279,8 @@ class CadTutorActivity : AppCompatActivity() {
         try {
             status.text = "Abrindo imagem…"
             val image = withContext(Dispatchers.IO) {
-                val input = contentResolver.openInputStream(uri) ?: error("Imagem indisponível")
-                val bytes = input.use { stream ->
-                    val output = ByteArrayOutputStream()
-                    val buffer = ByteArray(8192)
-                    while (true) {
-                        val count = stream.read(buffer)
-                        if (count < 0) break
-                        require(output.size() + count <= 12 * 1024 * 1024) { "Imagem muito grande" }
-                        output.write(buffer, 0, count)
-                    }
-                    output.toByteArray()
-                }
-                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-                require(options.outWidth > 0 && options.outHeight > 0)
-                options.inJustDecodeBounds = false
-                options.inSampleSize = 1
-                while (maxOf(options.outWidth, options.outHeight) / options.inSampleSize > 2048) options.inSampleSize *= 2
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: error("Formato inválido")
-                val orientation = runCatching { ExifInterface(ByteArrayInputStream(bytes))
-                    .getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL) }.getOrDefault(1)
-                val matrix = Matrix().apply {
-                    when (orientation) {
-                        2 -> setScale(-1f, 1f)
-                        3 -> setRotate(180f)
-                        4 -> setScale(1f, -1f)
-                        5 -> { setRotate(90f); postScale(-1f, 1f) }
-                        6 -> setRotate(90f)
-                        7 -> { setRotate(-90f); postScale(-1f, 1f) }
-                        8 -> setRotate(-90f)
-                    }
-                }
-                val oriented = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-                val encoded = try { ByteArrayOutputStream().use {
-                    check(oriented.compress(Bitmap.CompressFormat.JPEG, 90, it)); it.toByteArray()
-                } } finally { if (oriented !== bitmap) oriented.recycle(); bitmap.recycle() }
-                ImageFrame(encoded, "image/jpeg", if (reference) ImageSource.IMPORTED_DRAWING else ImageSource.TEST_FIXTURE,
-                    System.currentTimeMillis())
+                ImageImport.readAsJpeg(contentResolver, uri,
+                    if (reference) ImageSource.IMPORTED_DRAWING else ImageSource.TEST_FIXTURE)
             }
             if (reference) {
                 if (session != null || connecting) return@action

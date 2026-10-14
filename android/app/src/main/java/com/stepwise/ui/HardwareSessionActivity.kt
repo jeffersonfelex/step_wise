@@ -13,31 +13,29 @@ import com.stepwise.R
 import com.stepwise.ai.LlamaStepEvaluator
 import com.stepwise.audio.TtsManager
 import com.stepwise.audio.VoiceInputManager
+import com.stepwise.data.db.AppDatabase
 import com.stepwise.engine.ProceduralEngine
 import com.stepwise.engine.StepResult
 import com.stepwise.glasses.MetaDatSessionManager
-import com.stepwise.glasses.QualityGate
 import com.stepwise.power.BatteryMonitor
 import com.stepwise.procedure.ProcedureLoader
-import com.stepwise.resilience.LinkStateManager
 import com.stepwise.session.SessionController
 import com.stepwise.session.VoiceCommand
-import com.stepwise.vision.ColorSegmentationDetector
-import com.stepwise.vision.CompositeDetector
-import com.stepwise.vision.MediaPipeLiteRtDetector
+import com.stepwise.vision.TfliteClassifierDetector
 import kotlinx.coroutines.Job
 
 /**
  * Sessão do modo hardware (montagem física) — constrói e liga CTRL/ENG/
- * PROC/DAT/VOICE/TTS/REC (ver diagrama de arquitetura) e expõe:
- *  - início de sessão com o procedimento de demonstração
- *    ("montagem_engrenagens", único com JSON real no momento);
- *  - fallback de UI para VERIFY/HELP/REPEAT (o principal é por voz, ver
- *    claude/checklist-hackathon.md — a UI é só contingência de pitch);
+ * PROC/DAT/VOICE/TTS/DB (ver diagrama de arquitetura) e expõe:
+ *  - sessão com o procedimento real do kit (torneira com conexões),
+ *    retomando o último checkpoint salvo;
+ *  - verificação local (classificador TFLite + regras do procedimento) e,
+ *    só se houver chave configurada, avaliação por IA na nuvem quando o
+ *    motor local não tiver certeza — com aviso explícito na tela;
+ *  - fallback de UI para VERIFY/HELP/REPEAT (o principal é por voz);
  *  - Modo Demonstração, para mostrar a transição de fading (feedback da
  *    mentoria, 15/09) e roteirizar KNOWN_ERROR/INCONCLUSIVE sem depender
- *    da integração real do Meta DAT (ainda pendente, ver
- *    MetaDatSessionManager.captureBestFrameFromStream).
+ *    da câmera dos óculos.
  */
 class HardwareSessionActivity : AppCompatActivity() {
 
@@ -46,8 +44,10 @@ class HardwareSessionActivity : AppCompatActivity() {
     private lateinit var procedureLoader: ProcedureLoader
     private lateinit var batteryMonitor: BatteryMonitor
     private lateinit var ttsManager: TtsManager
+    private lateinit var classifier: TfliteClassifierDetector
     private lateinit var statusView: TextView
     private lateinit var batteryView: TextView
+    private var cloudEnabled = false
     private var batteryJob: Job? = null
 
     private val requestPermissions = registerForActivityResult(
@@ -55,7 +55,6 @@ class HardwareSessionActivity : AppCompatActivity() {
     ) { grants ->
         if (grants.values.all { it }) {
             sessionController.startSession(PROCEDURE_ID)
-            refreshStatus()
         } else {
             statusView.text = getString(R.string.hardware_permissions_denied)
         }
@@ -66,18 +65,16 @@ class HardwareSessionActivity : AppCompatActivity() {
 
         proceduralEngine = ProceduralEngine()
         ttsManager = TtsManager(this)
-        val metaDatSessionManager = MetaDatSessionManager()
-        val visualDetector = CompositeDetector(MediaPipeLiteRtDetector(), ColorSegmentationDetector())
         procedureLoader = ProcedureLoader(this)
-        // Uso de IA real (critério "Uso de IA"): compara o frame ao vivo com
-        // o desenho técnico de referência via modelo de visão hospedado na
-        // Groq — ver LlamaStepEvaluator/LlamaVisionClient. GROQ_API_KEY vem
-        // de local.properties (groq.api.key=...), nunca hardcoded.
-        val llamaStepEvaluator = LlamaStepEvaluator(this)
+        // Plano A local: classificador treinado com fotos reais do kit (ml/train.py).
+        classifier = TfliteClassifierDetector(this)
+        // Plano B na nuvem (Groq), opcional: sem chave (sempre no release) fica null.
+        val cloudEvaluator = LlamaStepEvaluator(this, procedureId = PROCEDURE_ID).takeIf { it.isConfigured }
+        cloudEnabled = cloudEvaluator != null
         batteryMonitor = BatteryMonitor(this)
         val voiceInputManager = VoiceInputManager(
             context = this,
-            onCommand = { command -> onVoiceCommand(command) },
+            onCommand = { command -> sessionController.onCommand(command) },
             onStatus = { message ->
                 runOnUiThread {
                     statusView.text = message
@@ -85,18 +82,17 @@ class HardwareSessionActivity : AppCompatActivity() {
                 }
             }
         )
-        val linkStateManager = LinkStateManager(onReconnected = { sessionController.onReconnected() })
 
         sessionController = SessionController(
-            metaDatSessionManager = metaDatSessionManager,
-            qualityGate = QualityGate(),
-            visualDetector = visualDetector,
+            metaDatSessionManager = MetaDatSessionManager(),
+            visualDetector = classifier,
             proceduralEngine = proceduralEngine,
             voiceInputManager = voiceInputManager,
             ttsManager = ttsManager,
             procedureLoader = procedureLoader,
-            linkStateManager = linkStateManager,
-            llamaStepEvaluator = llamaStepEvaluator
+            cloudEvaluator = cloudEvaluator,
+            sessionStateDao = AppDatabase.getInstance(this).sessionStateDao(),
+            onStateChanged = { spoken -> refreshStatus(spoken) },
         )
 
         setContentView(buildLayout())
@@ -113,6 +109,12 @@ class HardwareSessionActivity : AppCompatActivity() {
         val (statusCard, statusInner) = buildCard(ctx)
         statusView = buildBodyText(ctx).apply { textSize = 17f }
         statusInner.addView(statusView)
+        val verification = buildCaptionText(
+            ctx,
+            getString(if (cloudEnabled) R.string.hardware_verification_cloud else R.string.hardware_verification_local)
+        )
+        setLinearMargins(ctx, verification, top = 10)
+        statusInner.addView(verification)
         batteryView = buildCaptionText(ctx)
         setLinearMargins(ctx, batteryView, top = 10)
         statusInner.addView(batteryView)
@@ -137,13 +139,13 @@ class HardwareSessionActivity : AppCompatActivity() {
     private fun commandRow(ctx: HardwareSessionActivity): LinearLayout {
         val row = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         row.addView(buildPrimaryButton(ctx, getString(R.string.verify_fallback)) {
-            onVoiceCommand(VoiceCommand.VERIFY)
+            sessionController.onCommand(VoiceCommand.VERIFY)
         }.apply { layoutParams = rowButtonParams(ctx) })
         row.addView(buildSecondaryButton(ctx, getString(R.string.help_fallback)) {
-            onVoiceCommand(VoiceCommand.HELP)
+            sessionController.onCommand(VoiceCommand.HELP)
         }.apply { layoutParams = rowButtonParams(ctx) })
         row.addView(buildSecondaryButton(ctx, getString(R.string.repeat_fallback)) {
-            onVoiceCommand(VoiceCommand.REPEAT)
+            sessionController.onCommand(VoiceCommand.REPEAT)
         }.apply { layoutParams = rowButtonParams(ctx, marginEnd = 0) })
         return row
     }
@@ -153,10 +155,8 @@ class HardwareSessionActivity : AppCompatActivity() {
 
         val enableButton = buildSecondaryButton(ctx, getString(R.string.hardware_demo_enable)) {
             runCatching { procedureLoader.load(PROCEDURE_ID) }
-                .onSuccess { loadedProcedure ->
-                    sessionController.enableDemoMode(loadedProcedure)
-                    refreshStatus()
-                }
+                .onSuccess { loadedProcedure -> sessionController.enableDemoMode(loadedProcedure) }
+                .onFailure { statusView.text = getString(R.string.hardware_procedure_error) }
         }
         enableButton.layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
@@ -166,36 +166,31 @@ class HardwareSessionActivity : AppCompatActivity() {
 
         val forceRow = LinearLayout(ctx).apply { orientation = LinearLayout.HORIZONTAL }
         forceRow.addView(buildSuccessButton(ctx, getString(R.string.hardware_demo_force_correct)) {
-            forceDemoResult(StepResult.CORRECT)
+            sessionController.forceDemoResult(StepResult.CORRECT)
         }.apply { layoutParams = rowButtonParams(ctx) })
         forceRow.addView(buildWarningButton(ctx, getString(R.string.hardware_demo_force_error)) {
-            forceDemoResult(StepResult.KNOWN_ERROR)
+            sessionController.forceDemoResult(StepResult.KNOWN_ERROR)
         }.apply { layoutParams = rowButtonParams(ctx) })
         forceRow.addView(buildSecondaryButton(ctx, getString(R.string.hardware_demo_force_inconclusive)) {
-            forceDemoResult(StepResult.INCONCLUSIVE)
+            sessionController.forceDemoResult(StepResult.INCONCLUSIVE)
         }.apply { layoutParams = rowButtonParams(ctx, marginEnd = 0) })
         column.addView(forceRow)
 
         return column
     }
 
-    private fun forceDemoResult(result: StepResult) {
-        sessionController.forceDemoResult(result)
-        refreshStatus()
-    }
-
-    private fun onVoiceCommand(command: VoiceCommand) {
-        sessionController.onCommand(command)
-        refreshStatus()
-    }
-
-    private fun refreshStatus() {
-        statusView.text = getString(
-            R.string.hardware_status_format,
-            proceduralEngine.currentStepIndex() + 1,
-            proceduralEngine.currentLevel().name,
-            proceduralEngine.currentInstruction(repeat = true)
-        )
+    /** Chamado pelo SessionController na thread principal, com o texto que acabou de ser falado. */
+    private fun refreshStatus(spoken: String) {
+        statusView.text = if (proceduralEngine.isCompleted()) {
+            spoken
+        } else {
+            getString(
+                R.string.hardware_status_format,
+                proceduralEngine.currentStepNumber(),
+                proceduralEngine.currentLevel().name,
+                spoken
+            )
+        }
     }
 
     // Amostra a cada 10 min (critério "Eficiência de bateria", CP2 — ver
@@ -224,12 +219,13 @@ class HardwareSessionActivity : AppCompatActivity() {
     override fun onDestroy() {
         batteryJob?.cancel()
         sessionController.endSession()
+        ttsManager.shutdown()
+        classifier.close()
         super.onDestroy()
     }
 
     private companion object {
-        // Único procedimento com JSON real neste checkout (ver
-        // assets/procedures/montagem_engrenagens.json).
-        const val PROCEDURE_ID = "montagem_engrenagens"
+        // Kit real da final (ver docs/final-2026-09/dataset-real-stepwise.md).
+        const val PROCEDURE_ID = "montagem_torneira_stepwise_v1"
     }
 }

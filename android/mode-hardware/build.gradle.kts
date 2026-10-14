@@ -28,7 +28,8 @@ dependencies {
     api(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
-    // Future LiteRT / MediaPipe / marker detector dependencies belong here.
+    // Classificador visual local (TfliteClassifierDetector), validado no POCO na final.
+    implementation(libs.tflite)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.json) // org.json real nos testes JVM (o android.jar só tem stubs)

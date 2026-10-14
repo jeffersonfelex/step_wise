@@ -11,6 +11,7 @@ import com.stepwise.software.SoftwareTutorConnection
 import com.stepwise.software.SoftwareTutorEvent
 import com.stepwise.software.SoftwareTutorInput
 import com.stepwise.software.SoftwareTutorProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -74,7 +75,7 @@ private class LlamaCadTutorConnection(
             is SoftwareTutorInput.Audio -> {
                 // ASR já acontece no app (Vosk, offline) antes de chegar aqui como Text -
                 // este provider não recebe PCM bruto.
-                eventChannel.send(
+                eventChannel.trySend(
                     SoftwareTutorEvent.Failure("Entrada de áudio direta não suportada; envie como Text já transcrito.")
                 )
             }
@@ -104,12 +105,14 @@ private class LlamaCadTutorConnection(
             )
             val plan = parsePlan(response.rawText)
             currentPlan = plan
-            eventChannel.send(SoftwareTutorEvent.PlanProposed(plan))
+            eventChannel.trySend(SoftwareTutorEvent.PlanProposed(plan))
+        } catch (e: CancellationException) {
+            throw e // Interromper/encerrar não é falha do tutor.
         } catch (e: Exception) {
             Log.w(TAG, "Falha ao gerar o plano a partir do desenho técnico.", e)
-            eventChannel.send(SoftwareTutorEvent.Failure(errorMessage(e, "gerar o passo a passo")))
+            eventChannel.trySend(SoftwareTutorEvent.Failure(errorMessage(e, "gerar o passo a passo")))
         } finally {
-            eventChannel.send(SoftwareTutorEvent.TurnCompleted)
+            eventChannel.trySend(SoftwareTutorEvent.TurnCompleted)
         }
     }
 
@@ -121,12 +124,14 @@ private class LlamaCadTutorConnection(
                     userText = text,
                     images = listOf(task.drawing.bytes)
                 )
-                eventChannel.send(SoftwareTutorEvent.TextDelta(response.rawText.trim()))
+                eventChannel.trySend(SoftwareTutorEvent.TextDelta(response.rawText.trim()))
+            } catch (e: CancellationException) {
+                throw e // Interromper/encerrar não é falha do tutor.
             } catch (e: Exception) {
                 Log.w(TAG, "Falha ao responder pergunta do aluno.", e)
-                eventChannel.send(SoftwareTutorEvent.Failure(errorMessage(e, "responder")))
+                eventChannel.trySend(SoftwareTutorEvent.Failure(errorMessage(e, "responder")))
             } finally {
-                eventChannel.send(SoftwareTutorEvent.TurnCompleted)
+                eventChannel.trySend(SoftwareTutorEvent.TurnCompleted)
             }
         }
     }
@@ -141,18 +146,23 @@ private class LlamaCadTutorConnection(
                     images = listOf(frameJpeg)
                 )
                 // requestId devolvido para que CadProgress aceite só a resposta deste pedido.
-                eventChannel.send(SoftwareTutorEvent.Assessment(parseAssessment(goalId, response.rawText), requestId))
+                eventChannel.trySend(SoftwareTutorEvent.Assessment(parseAssessment(goalId, response.rawText), requestId))
+            } catch (e: CancellationException) {
+                throw e // Interromper/encerrar não é falha do tutor.
             } catch (e: Exception) {
                 Log.w(TAG, "Falha ao verificar o progresso do aluno.", e)
-                eventChannel.send(SoftwareTutorEvent.Failure(errorMessage(e, "verificar seu progresso")))
+                eventChannel.trySend(SoftwareTutorEvent.Failure(errorMessage(e, "verificar seu progresso")))
             } finally {
-                eventChannel.send(SoftwareTutorEvent.TurnCompleted)
+                eventChannel.trySend(SoftwareTutorEvent.TurnCompleted)
             }
         }
     }
 
-    private fun errorMessage(e: Exception, action: String): String =
-        "Não consegui $action agora (${e.message ?: e::class.simpleName}). Tente de novo."
+    // Detalhes técnicos (corpo da resposta, JSON inválido) ficam no log; a tela e a voz recebem texto seguro.
+    private fun errorMessage(e: Exception, action: String): String {
+        val reason = (e as? LlamaVisionClient.LlamaVisionException)?.userMessage ?: "A resposta da IA veio em formato inesperado."
+        return "Não consegui $action agora. $reason Tente de novo."
+    }
 
     // -------------------------------------------------------------------
     // Prompts

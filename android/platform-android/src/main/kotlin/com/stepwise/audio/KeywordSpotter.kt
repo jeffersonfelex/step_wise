@@ -6,6 +6,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
 import com.stepwise.session.VoiceCommand
+import com.stepwise.session.VoiceCommandParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,7 +25,7 @@ import org.vosk.Recognizer
  * nuvem"). Como só existem 3 comandos, um detector de palavras-chave
  * (KWS) offline é determinístico, privado e funciona sem rede.
  *
- * Implementação escolhida: Vosk com gramática restrita às 3 palavras
+ * Implementação escolhida: Vosk com gramática restrita ao vocabulário dos 3 comandos
  * (ver OfflineKeywordSpotter). Alternativas descartadas por ora:
  * sherpa-onnx KWS, Porcupine, createOnDeviceSpeechRecognizer (mantido
  * abaixo como fallback opcional em aparelhos Android 12+).
@@ -55,7 +56,7 @@ interface KeywordSpotter {
 /**
  * KWS offline via Vosk. Lê PCM 16-bit mono direto de um AudioRecord na
  * rota SCO (aberta por VoiceInputManager) e alimenta um Recognizer com
- * gramática restrita às 3 palavras do produto — nunca envia áudio para
+ * gramática restrita ao vocabulário dos comandos — nunca envia áudio para
  * fora do dispositivo.
  *
  * O modelo (assets/model, ~50MB) é baixado ANTES do build por
@@ -66,7 +67,6 @@ class OfflineKeywordSpotter(private val context: Context) : KeywordSpotter {
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var listenJob: Job? = null
-    private var audioRecord: AudioRecord? = null
 
     override fun start(onCommand: (VoiceCommand) -> Unit, onError: (String) -> Unit) {
         if (listenJob?.isActive == true) return
@@ -111,8 +111,9 @@ class OfflineKeywordSpotter(private val context: Context) : KeywordSpotter {
                 return@launch
             }
 
-            audioRecord = record
             val buffer = ByteArray(minBuffer)
+            // Só esta coroutine para e libera o gravador: liberar em stop() enquanto
+            // read() ainda roda faria o stop() abaixo lançar IllegalStateException.
             try {
                 record.startRecording()
                 if (record.recordingState != AudioRecord.RECORDSTATE_RECORDING) {
@@ -122,13 +123,17 @@ class OfflineKeywordSpotter(private val context: Context) : KeywordSpotter {
                 }
                 while (isActive) {
                     val read = record.read(buffer, 0, buffer.size)
-                    if (read <= 0) continue
-                    if (recognizer.acceptWaveForm(buffer, read)) {
+                    if (read < 0) {
+                        Log.e(TAG, "AudioRecord.read() falhou ($read).")
+                        onError("O microfone parou de responder. Comandos de voz indisponíveis; use os botões na tela.")
+                        break
+                    }
+                    if (read > 0 && recognizer.acceptWaveForm(buffer, read)) {
                         parseCommand(recognizer.result)?.let { onCommand(it) }
                     }
                 }
             } finally {
-                record.stop()
+                runCatching { record.stop() }
                 record.release()
                 recognizer.close()
             }
@@ -136,29 +141,24 @@ class OfflineKeywordSpotter(private val context: Context) : KeywordSpotter {
     }
 
     override fun stop() {
+        // A leitura bloqueia no máximo um buffer (~poucas dezenas de ms) antes de ver o cancelamento.
         listenJob?.cancel()
         listenJob = null
-        audioRecord?.release()
-        audioRecord = null
     }
 
     private fun parseCommand(resultJson: String): VoiceCommand? {
         val text = runCatching { JSONObject(resultJson).optString("text", "") }.getOrDefault("")
-        return when (text.trim()) {
-            "verificar" -> VoiceCommand.VERIFY
-            "ajuda" -> VoiceCommand.HELP
-            "repetir" -> VoiceCommand.REPEAT
-            else -> null
-        }
+        return VoiceCommandParser.parse(text)
     }
 
     companion object {
         private const val TAG = "OfflineKeywordSpotter"
         private const val SAMPLE_RATE = 16_000f
 
-        // Gramática restrita: só estas palavras (mais "[unk]" para tudo que
-        // não bate) são candidatas ao resultado do Vosk.
-        private const val GRAMMAR = """["verificar", "ajuda", "repetir", "[unk]"]"""
+        // Gramática restrita: só o vocabulário dos comandos (mais "[unk]" para
+        // tudo que não bate) é candidato ao resultado do Vosk.
+        private val GRAMMAR = (VoiceCommandParser.vocabulary + "[unk]")
+            .joinToString(prefix = "[", postfix = "]") { "\"$it\"" }
     }
 }
 

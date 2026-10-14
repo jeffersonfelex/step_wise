@@ -41,7 +41,7 @@ class HardwareTutorActivity : Activity() {
         label("Hardware · Montagem física").textSize = 25f
         setContentView(ScrollView(this).apply { addView(content) })
         try {
-            procedure = ProcedureLoader(this).load("montagem_engrenagens")
+            procedure = ProcedureLoader(this).load("montagem_torneira_stepwise_v1")
         } catch (_: Exception) {
             label("Não foi possível carregar o procedimento de montagem.")
             return
@@ -74,7 +74,7 @@ class HardwareTutorActivity : Activity() {
         render()
         speech = TextToSpeech(this) { result ->
             if (!isDestroyed) {
-                val language = if (result == TextToSpeech.SUCCESS) speech?.setLanguage(Locale("pt", "BR")) else null
+                val language = if (result == TextToSpeech.SUCCESS) speech?.setLanguage(Locale.forLanguageTag("pt-BR")) else null
                 listen.isEnabled = language != null && language >= TextToSpeech.LANG_AVAILABLE
                 if (!listen.isEnabled) status.text = "Voz em português indisponível. Use as instruções na tela."
             }

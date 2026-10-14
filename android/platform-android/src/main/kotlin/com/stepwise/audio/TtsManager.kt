@@ -29,7 +29,7 @@ class TtsManager(context: Context) {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 ready = true
-                val result = tts?.setLanguage(Locale("pt", "BR"))
+                val result = tts?.setLanguage(Locale.forLanguageTag("pt-BR"))
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
                     Log.w(TAG, "pt-BR indisponível no motor TTS deste aparelho; usando idioma padrão.")
                 }

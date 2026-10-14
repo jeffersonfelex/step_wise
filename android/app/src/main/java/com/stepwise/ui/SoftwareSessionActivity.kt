@@ -1,7 +1,6 @@
 package com.stepwise.ui
 
 import android.Manifest
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -26,11 +25,12 @@ import com.stepwise.software.CadTask
 import com.stepwise.software.SoftwareTutorEvent
 import com.stepwise.software.SoftwareTutorInput
 import com.stepwise.software.SoftwareTutorSession
+import com.stepwise.software.android.ImageImport
 import com.stepwise.software.android.providers.LlamaCadTutorProvider
-import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Sessão do modo software (tutor de CAD) — recebe um desenho técnico
@@ -83,7 +83,7 @@ class SoftwareSessionActivity : AppCompatActivity() {
         ttsManager = TtsManager(this)
         voiceInputManager = VoiceInputManager(
             context = this,
-            onCommand = { command -> onVoiceCommand(command) },
+            onCommand = { command -> runOnUiThread { onVoiceCommand(command) } },
             onStatus = { message ->
                 runOnUiThread {
                     statusView.text = message
@@ -177,32 +177,28 @@ class SoftwareSessionActivity : AppCompatActivity() {
     // -------------------------------------------------------------------
 
     private fun loadDrawing(uri: Uri) {
-        val raw = runCatching {
-            contentResolver.openInputStream(uri)?.use { it.readBytes() }
-        }.getOrNull()
-        if (raw == null) {
-            statusView.text = getString(R.string.software_drawing_decode_error)
-            return
+        pickDrawingButton.isEnabled = false
+        lifecycleScope.launch {
+            // Leitura limitada, redução e EXIF fora da thread principal (fotos de câmera podem ter 12+ MP).
+            val loaded = runCatching {
+                withContext(Dispatchers.IO) {
+                    val frame = ImageImport.readAsJpeg(contentResolver, uri, ImageSource.IMPORTED_DRAWING)
+                    val preview = BitmapFactory.decodeByteArray(frame.bytes, 0, frame.bytes.size,
+                        BitmapFactory.Options().apply { inSampleSize = 2 })
+                    frame.bytes to preview
+                }
+            }.getOrNull()
+            pickDrawingButton.isEnabled = true
+            if (loaded == null) {
+                statusView.text = getString(R.string.software_drawing_decode_error)
+                return@launch
+            }
+            drawingJpeg = loaded.first
+            drawingPreview.setImageBitmap(loaded.second)
+            drawingPreview.visibility = ImageView.VISIBLE
+            generatePlanButton.isEnabled = true
+            statusView.text = getString(R.string.software_drawing_selected)
         }
-
-        // Recodifica sempre para JPEG (a galeria pode entregar HEIC/PNG/etc.,
-        // e ImageFrame só aceita jpeg/png/webp) - também normaliza orientação
-        // básica via decode/recompress.
-        val bitmap = BitmapFactory.decodeByteArray(raw, 0, raw.size)
-        if (bitmap == null) {
-            statusView.text = getString(R.string.software_drawing_decode_error)
-            return
-        }
-        val jpeg = ByteArrayOutputStream().use { out ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
-            out.toByteArray()
-        }
-
-        drawingJpeg = jpeg
-        drawingPreview.setImageBitmap(bitmap)
-        drawingPreview.visibility = ImageView.VISIBLE
-        generatePlanButton.isEnabled = true
-        statusView.text = getString(R.string.software_drawing_selected)
     }
 
     private fun onGeneratePlanClicked() {

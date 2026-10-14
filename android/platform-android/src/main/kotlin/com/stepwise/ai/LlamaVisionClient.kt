@@ -7,7 +7,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -57,6 +57,9 @@ class LlamaVisionClient(
     private val httpClient: OkHttpClient = defaultHttpClient()
 ) {
 
+    /** false quando não há chave (sempre no build release): quem chama deve seguir sem IA remota. */
+    val isConfigured: Boolean get() = apiKey.isNotBlank()
+
     /** Resultado bruto de uma chamada — o parsing do JSON de domínio fica por conta de quem chama. */
     data class LlamaVisionResult(
         val rawText: String,
@@ -73,6 +76,21 @@ class LlamaVisionClient(
         /** true só quando a Groq confirmou que o MODELO em si não existe/não está acessível. */
         val isModelNotFound: Boolean
             get() = errorCode == "model_not_found" || (httpCode == 404 && message?.contains("does not exist") == true)
+
+        /**
+         * Texto para tela/voz. [message] pode trazer o corpo da resposta do
+         * provedor e fica só no log; nunca mostrar nem falar [message] ao aluno.
+         */
+        val userMessage: String
+            get() = when {
+                httpCode == null && cause is IOException -> "Sem conexão com o serviço de IA."
+                httpCode == null && errorCode == ERROR_NOT_CONFIGURED -> "A IA na nuvem não está configurada neste aparelho."
+                httpCode == 401 || httpCode == 403 -> "A chave da IA foi recusada. Confira a configuração."
+                httpCode == 429 -> "Limite de uso da IA atingido. Tente de novo em instantes."
+                isModelNotFound -> "O modelo de IA configurado não está disponível."
+                httpCode != null && httpCode >= 500 -> "O serviço de IA está indisponível agora."
+                else -> "A IA não conseguiu responder agora."
+            }
     }
 
     /**
@@ -94,7 +112,9 @@ class LlamaVisionClient(
         if (apiKey.isBlank()) {
             throw LlamaVisionException(
                 "GROQ_API_KEY não configurada. Defina groq.api.key em local.properties " +
-                    "(ver local.properties.example) ou a variável de ambiente GROQ_API_KEY."
+                    "(ver local.properties.example) ou a variável de ambiente GROQ_API_KEY; " +
+                    "só o build debug a embute.",
+                errorCode = ERROR_NOT_CONFIGURED
             )
         }
 
@@ -192,15 +212,29 @@ class LlamaVisionClient(
         throw lastModelNotFound ?: LlamaVisionException("Nenhum modelo candidato disponível.")
     }
 
-    private suspend fun executeAsync(request: Request): String = suspendCoroutine { continuation ->
-        httpClient.newCall(request).enqueue(object : Callback {
+    private suspend fun executeAsync(request: Request): String = suspendCancellableCoroutine { continuation ->
+        val call = httpClient.newCall(request)
+        // Sessão encerrada/tela fechada: aborta a requisição em vez de deixá-la terminar à toa.
+        continuation.invokeOnCancellation { call.cancel() }
+        call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                continuation.resumeWithException(LlamaVisionException("Falha de rede ao chamar a Groq", e))
+                if (continuation.isActive) {
+                    continuation.resumeWithException(LlamaVisionException("Falha de rede ao chamar a Groq", e))
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
-                    val text = it.body?.string().orEmpty()
+                    // Falha lendo o corpo também precisa retomar a coroutine; senão ela fica presa.
+                    val text = try {
+                        it.body?.string().orEmpty()
+                    } catch (e: IOException) {
+                        if (continuation.isActive) {
+                            continuation.resumeWithException(LlamaVisionException("Falha de rede ao ler a resposta da Groq", e))
+                        }
+                        return
+                    }
+                    if (!continuation.isActive) return
                     if (!it.isSuccessful) {
                         val errorCode = try {
                             JSONObject(text).optJSONObject("error")?.optString("code")
@@ -224,6 +258,7 @@ class LlamaVisionClient(
 
     companion object {
         private const val TAG = "LlamaVisionClient"
+        private const val ERROR_NOT_CONFIGURED = "not_configured"
         private const val BASE_URL = "https://api.groq.com/openai/v1/chat/completions"
         // 512 era baixo demais: um plano de CAD com vários passos (JSON
         // estruturado) já estoura isso e o JSON vem cortado no meio (erro

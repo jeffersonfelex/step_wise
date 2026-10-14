@@ -5,6 +5,7 @@ import android.util.Log
 import com.stepwise.engine.StepResult
 import com.stepwise.procedure.ProcedureStep
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -43,6 +44,9 @@ class LlamaStepEvaluator(
 ) {
 
     private val appContext = context.applicationContext
+
+    /** false sem chave da Groq (sempre no build release): a sessão segue só com o motor local. */
+    val isConfigured: Boolean get() = visionClient.isConfigured
     private val referenceDrawing: ByteArray? by lazy { loadReferenceDrawing() }
 
     private fun loadReferenceDrawing(): ByteArray? {
@@ -87,6 +91,8 @@ class LlamaStepEvaluator(
                 images = images
             )
             parseResponse(response)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             // Cobre falha de rede/HTTP (LlamaVisionClient.LlamaVisionException) e
             // resposta malformada (JSONException) com o mesmo fallback seguro:
@@ -168,6 +174,6 @@ class LlamaStepEvaluator(
 
     companion object {
         private const val TAG = "LlamaStepEvaluator"
-        const val DEFAULT_PROCEDURE_ID = "montagem_engrenagens"
+        const val DEFAULT_PROCEDURE_ID = "montagem_torneira_stepwise_v1"
     }
 }

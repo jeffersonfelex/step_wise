@@ -30,6 +30,9 @@
     <string name="hardware_status_format">Etapa %1$d · Nível %2$s\n%3$s</string>
     <string name="hardware_battery_format">Bateria do celular: %1$s%% (óculos: leia manualmente no app Meta AI)</string>
     <string name="hardware_battery_unknown">indisponível</string>
+    <string name="hardware_verification_local">Verificação 100% no aparelho: a foto é analisada pelo modelo local e descartada logo em seguida.</string>
+    <string name="hardware_verification_cloud">IA na nuvem ativa (build de desenvolvimento): quando o modelo local não tiver certeza, a foto da bancada é enviada à Groq para avaliação.</string>
+    <string name="hardware_procedure_error">Não foi possível carregar o procedimento de montagem.</string>
 
     <!-- SoftwareSessionActivity -->
     <string name="software_session_title">Sessão de modelagem CAD</string>
