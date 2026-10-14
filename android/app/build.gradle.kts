@@ -1,18 +1,20 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.stepwise"
-    compileSdk = 35
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.stepwise.digital"
-        minSdk = 31 // exigido pelo Meta Wearables DAT (mwdat-core/mwdat-camera)
-        targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0-mvp"
+        minSdk = libs.versions.minSdk.get().toInt() // exigido pelo Meta Wearables DAT
+        targetSdk = libs.versions.targetSdk.get().toInt()
+        versionCode = 2
+        versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -28,11 +30,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 }
+
+kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
 
 dependencies {
     implementation(project(":core"))
@@ -40,8 +40,8 @@ dependencies {
     implementation(project(":mode-hardware"))
     implementation(project(":mode-software"))
     implementation(project(":software-android"))
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+    implementation(libs.androidx.core)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.lifecycle.runtime)
 }

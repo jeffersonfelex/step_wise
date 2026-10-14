@@ -4,10 +4,13 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
-    plugins { id("org.jetbrains.kotlin.jvm") version "1.9.24" }
 }
 
-dependencyResolutionManagement { repositories { mavenCentral() } }
+dependencyResolutionManagement {
+    repositories { mavenCentral() }
+    // Same versions as the Android build; no duplicated version numbers.
+    versionCatalogs { create("libs") { from(files("../gradle/libs.versions.toml")) } }
+}
 
 rootProject.name = "stepwise-jvm-tests"
 include(":core", ":mode-software")

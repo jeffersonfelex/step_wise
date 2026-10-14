@@ -1,10 +1,18 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     `java-library`
-    id("org.jetbrains.kotlin.jvm")
+    alias(libs.plugins.kotlin.jvm)
 }
 
-kotlin { jvmToolchain(17) }
+// Bytecode 17 with any JDK >= 17 (no toolchain download needed).
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
 
 dependencies {
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    api(libs.coroutines.core)
+    testImplementation(libs.junit)
 }

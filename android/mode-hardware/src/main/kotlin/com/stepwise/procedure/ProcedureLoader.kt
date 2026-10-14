@@ -9,7 +9,7 @@ import org.json.JSONObject
  * Carrega a definição de um procedimento a partir de
  * assets/procedures/<procedure_id>.json do módulo hardware (PROC no diagrama).
  *
- * Formato esperado (ver src/main/assets/procedures/*.json):
+ * Formato esperado (ver os JSON em src/main/assets/procedures/):
  * `procedure_id`, `title` e `steps[]`, cada etapa com `step_id`, `name`,
  * `expected_classes[]`, `instructions{L4..L1}` e `known_errors[]`
  * (`error_id`, `message`). O campo `fading_rule` do JSON é informativo -

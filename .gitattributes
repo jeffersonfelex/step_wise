@@ -1,0 +1,19 @@
+# Normaliza finais de linha no repositório (LF), independente do core.autocrlf local.
+* text=auto
+
+# Scripts de shell precisam de LF mesmo no checkout do Windows (Git Bash/WSL).
+*.sh text eol=lf
+android/gradlew text eol=lf
+
+# Scripts do Windows precisam de CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binários
+*.jar binary
+*.tflite binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.zip binary
