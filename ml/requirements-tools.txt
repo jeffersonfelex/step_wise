@@ -1,0 +1,5 @@
+# Windows Python 3.10: image/configuration tools only, not Model Maker training.
+numpy<2
+Pillow
+opencv-contrib-python<4.12
+pytest

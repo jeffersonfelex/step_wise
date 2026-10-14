@@ -1,0 +1,5 @@
+# Opcional: data augmentation para o caminho de detecção (ver augment.py).
+# Separado de requirements.txt para não alterar o ambiente de treino travado
+# (mediapipe-model-maker/tensorflow<2.16/numpy<2).
+#   pip install -r requirements.txt -r requirements-augment.txt
+albumentations>=1.4,<2

@@ -51,3 +51,14 @@ android/platform-android/src/main/assets/model/
 
 # Saídas auxiliares do Claude
 Claude outputs/
+
+# Ambientes locais da preparação da final (ver docs/final-2026-09/)
+.tools/
+.venv-tools/
+.venv-train/
+.pytest_cache/
+.tmp_analysis/
+.tmp_pdf_reader/
+AI Glasses Brasil/
+# Dataset bruto local; usar Git LFS/Drive se precisar versionar imagens
+/dataset stepwise/
