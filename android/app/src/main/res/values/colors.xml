@@ -1,0 +1,22 @@
+<resources>
+    <color name="bg_base">#0B0D12</color>
+    <color name="bg_surface">#161922</color>
+    <color name="bg_surface_alt">#1E222D</color>
+    <color name="outline">#2A2F3B</color>
+
+    <color name="text_primary">#F2F3F7</color>
+    <color name="text_secondary">#A6ACBB</color>
+    <color name="text_hint">#6B7280</color>
+
+    <color name="accent_primary">#7C6AEF</color>
+    <color name="accent_primary_dark">#6355C7</color>
+    <color name="accent_hardware">#2DD4BF</color>
+    <color name="accent_software">#7C6AEF</color>
+
+    <color name="success">#34D399</color>
+    <color name="warning">#FBBF24</color>
+    <color name="error">#F87171</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

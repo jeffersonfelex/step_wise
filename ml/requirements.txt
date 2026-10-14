@@ -9,3 +9,4 @@ pillow>=10.3
 pandas>=2.2
 python-dotenv>=1.0
 tqdm>=4.66
+groq>=1.7
